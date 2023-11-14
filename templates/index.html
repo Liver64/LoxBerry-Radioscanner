@@ -1,0 +1,253 @@
+<style type="text/css">
+
+.container {
+  display: flex;
+  justify-content: left;
+}
+.center {
+  width: 300px; 
+  padding: 10px;
+  background: #5F85DB;
+}
+
+</style>
+
+<TMPL_IF FORM>
+	
+    <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
+        <input type="hidden" name="saveformdata1" value="1">
+		<input type="hidden" name="countdongles" id="countdongles" value=<TMPL_VAR COUNT_DONGLE>>
+		<div class="scanner" style="display:flex;align-items:center;justify-content:center;">
+			<span id="scanner"></span>&nbsp;
+		</div>	
+        <div class="form-group">
+
+            <table class="formtable" border="0" width="100%" cellpadding="3">
+                <tr>
+					<td style="height: 33px; text-align: left;">
+						<h3 class="auto-style2" style="width: 50%">
+							<TMPL_VAR BASIS.MAIN_HEADER>
+						</h3>
+						<label id="ltip"><TMPL_VAR BASIS.MENU_TIP></label>
+					</td>
+					<td style="height: 33px; text-align: center; vertical-align: middle">
+                        <img class='ico_scan' src='./images/icon_256.png' border='0' width='90' height='90' align="absmiddle">
+                    </td>
+					<td style="height: 150px; width: 5%;"></td>
+                </tr>
+                <tr>
+                    <td class="foundusb" style="height: 30px; width: 10%;">
+						<label id="lusb"><TMPL_VAR HW.CARDS></label>
+					</td>
+					<td class="foundusb" style="height: 30px; width: 10%;">
+						<div class="container">
+							<div id="usblist" class="center" style="text-align:left; display:inline-block; margin-bottom:5px; width:80%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: rgba(228,228,228,.7);">
+							<font size="-1">
+								<TMPL_VAR SC_LIST>
+							</font>
+							</div>
+						</div>
+					</td>
+				</tr>
+				
+				<!-- Dongle table -->
+				<tr>
+					<td style="height: 133px; width: 10%;">
+						<label id="lusb" style="font-weight:bold"><TMPL_VAR HW.DONGLE1></label>
+					</td>
+                    <td valign="middle" style="height: 41px; width: 20%;">
+                        <table style="border: 2px solid #000000; width="100%" cellpadding="2" cellspacing="0" border-radius="5px"; id="tbldongle1" name="tbldongle1">
+							<td style="height: 48px; width: 8%">
+								<label id="lid"><TMPL_VAR DONGLE.ID></label>
+							</td>
+							<td style="width: 8%; height: 48px">
+								<input id="d1id1" name="d1id1" type="text" class="textfield" placeholder= "ID" value="<TMPL_VAR DONGLE1.ID>">
+							</td>
+							<td style="height: 48px; width: 2%">
+								<label id="ldongle"><TMPL_VAR DONGLE.LFREQ></label>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d1freq1" name="d1freq1" data-mini="true" data-native-menu="false" width="2%">
+									<option value="433.92M">433M</option>
+									<option value="868M">868M</option>
+									<option value="315M">315M</option>
+									<option value="345M">345M</option>
+									<option value="915M">915M</option>
+								</select>
+								<script>
+									$('#d1freq1 option[value="<TMPL_VAR DONGLE1.freq1>"').prop('selected', 'selected');
+								</script>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d1freq2" name="d1freq2" data-mini="true" data-native-menu="false" width="2%">
+									<option value="0">-</option>'
+									<option value="433.92M">433M</option>
+									<option value="868M">868M</option>
+									<option value="315M">315M</option>
+									<option value="345M">345M</option>
+									<option value="915M">915M</option>
+								</select>
+								<script>
+									$('#d1freq2 option[value="<TMPL_VAR DONGLE1.freq2>"').prop('selected', 'selected');
+								</script>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d1freq3" name="d1freq3" data-mini="true" data-native-menu="false" width="2%">
+									<option value="0">-</option>'
+									<option value="433.92M">433M</option>
+									<option value="868M">868M</option>
+									<option value="315M">315M</option>
+									<option value="345M">345M</option>
+									<option value="915M">915M</option>
+								</select>
+								<script>
+									$('#d1freq3 option[value="<TMPL_VAR DONGLE1.freq3>"').prop('selected', 'selected');
+								</script>
+							</td>
+							<td style="width: 4%; height: 48px">
+								<input id="d1freq4" name="d1freq4" type="text" class="textfield" placeholder= "415M" value="<TMPL_VAR DONGLE1.freq4>">
+							</td>
+							
+							<tr>
+							<td style="height: 48px; width: 7%">
+								<label id="lhop"><TMPL_VAR DONGLE.LHOP></label>
+							</td>
+							<td style="height: 48px; width: 8%">
+								<input id="d1hop" name="d1hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE1.hop>">
+							</td>
+							<td style="height: 48px; width: 8%">
+								<label id="lsample"><TMPL_VAR DONGLE.SAMPLING></label>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d1sample" name="d1sample" data-mini="true" data-native-menu="false" width="50%">
+									<option value="250k">250k</option>
+									<option value="1024k">1024k</option>
+									<option value="2048k">2048k</option>
+									<option value="3200k">3200k</option>
+								</select>
+								<script>
+									$('#d1sample option[value="<TMPL_VAR DONGLE1.sample>"').prop('selected', 'selected');
+								</script>
+							</td>
+							</tr>
+                        </table>
+                </tr>
+			</table>
+            <p>
+                <center>
+					<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>
+                    <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+				</center>
+            </p>
+        </div>
+		
+		
+    </form>
+	
+</TMPL_IF>
+
+<script>
+
+$(document).on('pageinit', function() {
+	
+});
+
+// Update Pids from index.cgi
+function update_pids() {
+	
+	$.post( 'index.cgi', {
+	ajax: 'getpids' })
+
+	.done(function(resp) {
+		console.log( "ajax_post", "success", resp );
+		if(resp.pids.rscanner != null) {
+			$("#scanner").attr("style", "color:green").html("Scanning on ISM-Bands running (PID"+resp.pids.rscanner+")");
+		} else {
+			$("#scanner").attr("style", "color:red").html("Scanning on ISM-Bands not running or restarting");
+		}
+	})
+	.fail(function(resp) {
+		$("#scanner").attr("style", "color:red").html("Failed to query PID");
+		console.log( "ajax_post", "error", resp );
+	})
+	.always(function(resp) {
+		//console.log( "ajax_post", "finished", resp );
+	});
+}
+
+
+
+$(document).ready( function ()  {
+		$("form#main_form").submit(function(e) {
+			
+		});	
+		setInterval(function(){ update_pids(); }, 10000);
+		update_pids();
+});
+	
+
+</script>
+
+
+
+<TMPL_IF LOGFILES>
+    <!-- form 'LOGFILES' START -->
+    <TMPL_VAR LOGLIST_HTML>
+        <!-- form 'LOGFILES' END -->
+</TMPL_IF LOGFILES>
+
+
+<TMPL_IF SAVE>
+    <center>
+        <table border=0>
+            <tr>
+                <td align="center">
+                    <h2>
+                        <TMPL_VAR SAVE.SAVE_ALL_OK>
+                    </h2>
+                    <p>
+                        <TMPL_VAR SAVE.SAVE_MESSAGE>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td align="center">
+                    <p>
+                        <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=<TMPL_VAR FORMNO>">
+                            <TMPL_VAR SAVE.SAVE_BUTTON_OK>
+                        </a>
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </center>
+</TMPL_IF>
+
+
+<TMPL_IF ERROR>
+    <center>
+        <table border=0>
+            <tr>
+                <td align="center">
+                    <h2>
+                        <FONT COLOR="#FF0000">
+                            <TMPL_VAR ERRORS.ERR_TITLE>
+                        </FONT>
+                    </h2>
+                    <p>
+                        <TMPL_VAR ERR_MESSAGE>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td align="center">
+                    <p>
+                        <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=<TMPL_VAR FORMNO>">
+                            <TMPL_VAR ERRORS.ERR_BUTTON_BACK>
+                        </a>
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </center>
+</TMPL_IF>

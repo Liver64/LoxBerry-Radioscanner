@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Check if it is running and get PID
+pgrep rtl_433
+
+exitcode=$?
+if [[ $exitcode != 0 ]]; 
+then
+	# Restart if not
+	systemctl restart rtl_433-mqtt.service
+	sleep 5
+else
+	done
+fi
+
+exit 0
