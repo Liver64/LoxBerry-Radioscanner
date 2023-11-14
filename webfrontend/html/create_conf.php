@@ -77,8 +77,8 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 		fwrite($file,"frequency ".$config['DONGLE1']['freq3']."\r\n");
 		$hopp = "1";
 	} 
-	if ($config['DONGLE1']['freq4'] != "0")  {
-		fwrite($file,"frequency ".$config['DONGLE1']['freq4']."\r\n");
+	if ($config['DONGLE1']['freq4'] != "0" and !empty($config['DONGLE1']['freq4']))  {
+		fwrite($file,"frequency ".$config['DONGLE1']['freq4']."M\r\n");
 		$hopp = "1";
 	}
 	# If more then one frequence entered add hop interval
