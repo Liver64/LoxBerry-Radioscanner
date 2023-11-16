@@ -16,7 +16,7 @@
 	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
-		<input type="hidden" name="countdongles" id="countdongles" value=<TMPL_VAR COUNT_DONGLE>>
+		<input type="hidden" name="countdongles" id="countdongles" value=<TMPL_VAR DONGLE.count>>
 		<div class="scanner" style="display:flex;align-items:center;justify-content:center;">
 			<span id="scanner"></span>&nbsp;
 		</div>	
@@ -43,25 +43,51 @@
 						<div class="container">
 							<div id="usblist" class="center" style="text-align:left; display:inline-block; margin-bottom:5px; width:80%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: rgba(228,228,228,.7);">
 							<font size="-1">
-								<TMPL_VAR SC_LIST>
+								<TMPL_VAR USB_LIST>
 							</font>
 							</div>
 						</div>
 					</td>
 				</tr>
+			<div class="serial-group" data-role="collapsible">>	
+				<tr>
+					<td class="serial-group" style="height: 41px; width: 4%;">
+					</td>
+					<td class="serial-group" valign="left" style="height: 41px; width: 20%;">
+					<table class="serial-group" style="width=100%" cellpadding="2" cellspacing="0" border-radius="5px"; id="tblserial" name="tblserial">
+						<td style="height: 41px; width: 3%;">
+							<label valign="left" id="lsn"><TMPL_VAR HW.CARD_NO></label>
+						</td>
+						<td valign="left" style="height: 41px; width: 1%;">
+							<input disabled valign="left" id="did" name="did" type="text" class="textfield" value="0"
+								data-validation-error-msg="Bitte korrigieren" 
+								data-validation-rule="^([0-9]){1}$"">
+						</td>
+						<td valign="left" style="height: 41px; width: 2%;">
+							<input disabled valign="left" placeholder= "New Serial" id="didser" name="didser" type="text" class="textfield" value="<TMPL_VAR DONGLE1.Serial>"
+								data-validation-error-msg="Bitte korrigieren" 
+								data-validation-rule="^([0-9]){8}$"">
+						</td>
+						<td style="height: 41px; width: 4%;">
+							<!--<a id="btnserial" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=serialno"><TMPL_VAR DONGLE.CREATE_SER_BUTTON></a>-->
+						</td>
+					</table>
+					</td>
+				</tr>
+			</div>
 				
 				<!-- Dongle table -->
 				<tr>
 					<td style="height: 133px; width: 10%;">
-						<label id="lusb" style="font-weight:bold"><TMPL_VAR HW.DONGLE1></label>
+						<label id="lusb1" style="font-weight:bold"><TMPL_VAR HW.DONGLE1></label>
 					</td>
                     <td valign="middle" style="height: 41px; width: 20%;">
-                        <table style="border: 2px solid #000000; width="100%" cellpadding="2" cellspacing="0" border-radius="5px"; id="tbldongle1" name="tbldongle1">
+                        <table style="border: 2px solid #000000; border-radius: 8px; width="100%" cellpadding="2" cellspacing="0" id="tbldongle1" name="tbldongle1">
 							<td style="height: 48px; width: 8%">
 								<label id="lid"><TMPL_VAR DONGLE.ID></label>
 							</td>
 							<td style="width: 8%; height: 48px">
-								<input style="background-color: #e6e6e6;" id="d1id1" name="d1id1" type="text" class="textfield" placeholder= "ID" value="<TMPL_VAR DONGLE1.ID>">
+								<input disabled style="background-color: #e6e6e6;" id="d1id1" name="d1id1" type="text" class="textfield" placeholder= "Serial" value="<TMPL_VAR DONGLE1.Serial>">
 							</td>
 							<td style="height: 48px; width: 2%">
 								<label id="ldongle"><TMPL_VAR DONGLE.LFREQ></label>
@@ -132,6 +158,92 @@
 							</tr>
                         </table>
                 </tr>
+				
+				<!-- Dongle #2-->
+				<div class="serial-group-d2" data-role="collapsible">>	
+				<tr>
+					<td class="serial-group-d2" style="height: 133px; width: 10%;">
+						<label class="serial-group-d2" id="lusb2" style="font-weight:bold"><TMPL_VAR HW.DONGLE2></label>
+					</td>
+                    <td class="serial-group-d2" valign="middle" style="height: 41px; width: 20%;">
+                        <table class="serial-group-d2" style="border: 2px solid #000000; border-radius: 8px; width="100%" cellpadding="2" cellspacing="0" id="tbldongle2" name="tbldongle2">
+							<td style="height: 48px; width: 8%">
+								<label id="lid"><TMPL_VAR DONGLE.ID></label>
+							</td>
+							<td style="width: 8%; height: 48px">
+								<input disabled style="background-color: #e6e6e6;" id="d2id1" name="d2id1" type="text" class="textfield" placeholder= "Serial" value="<TMPL_VAR DONGLE2.Serial>">
+							</td>
+							<td style="height: 48px; width: 2%">
+								<label id="ldongle"><TMPL_VAR DONGLE.LFREQ></label>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d2freq1" name="d2freq1" data-mini="true" data-native-menu="false" width="2%">
+									<option value="433.92M">433M</option>
+									<option value="868M">868M</option>
+									<option value="315M">315M</option>
+									<option value="345M">345M</option>
+									<option value="915M">915M</option>
+								</select>
+								<script>
+									$('#d2freq1 option[value="<TMPL_VAR DONGLE2.freq1>"').prop('selected', 'selected');
+								</script>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d2freq2" name="d2freq2" data-mini="true" data-native-menu="false" width="2%">
+									<option value="0">-</option>'
+									<option value="433.92M">433M</option>
+									<option value="868M">868M</option>
+									<option value="315M">315M</option>
+									<option value="345M">345M</option>
+									<option value="915M">915M</option>
+								</select>
+								<script>
+									$('#d2freq2 option[value="<TMPL_VAR DONGLE2.freq2>"').prop('selected', 'selected');
+								</script>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d2freq3" name="d2freq3" data-mini="true" data-native-menu="false" width="2%">
+									<option value="0">-</option>'
+									<option value="433.92M">433M</option>
+									<option value="868M">868M</option>
+									<option value="315M">315M</option>
+									<option value="345M">345M</option>
+									<option value="915M">915M</option>
+								</select>
+								<script>
+									$('#d2freq3 option[value="<TMPL_VAR DONGLE2.freq3>"').prop('selected', 'selected');
+								</script>
+							</td>
+							<td style="width: 4%; height: 48px">
+								<input id="d2freq4" name="d2freq4" type="text" class="textfield" placeholder= "411.26" value="<TMPL_VAR DONGLE2.freq4>">
+							</td>
+							
+							<tr>
+							<td style="height: 48px; width: 7%">
+								<label id="lhop"><TMPL_VAR DONGLE.LHOP></label>
+							</td>
+							<td style="height: 48px; width: 8%">
+								<input id="d2hop" name="d2hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE2.hop>">
+							</td>
+							<td style="height: 48px; width: 8%">
+								<label id="lsample"><TMPL_VAR DONGLE.SAMPLING></label>
+							</td>
+							<td style="width: 2%; height: 48px">
+								<select id="d2sample" name="d2sample" data-mini="true" data-native-menu="false" width="50%">
+									<option value="250k">250k</option>
+									<option value="1024k">1024k</option>
+									<option value="2048k">2048k</option>
+									<option value="3200k">3200k</option>
+								</select>
+								<script>
+									$('#d2sample option[value="<TMPL_VAR DONGLE2.sample>"').prop('selected', 'selected');
+								</script>
+							</td>
+							</tr>
+                        </table>
+                </tr>
+				</div>
+				<!-- Ende Dongle tables -->
 			</table>
             <p>
                 <center>
@@ -149,7 +261,7 @@
 <script>
 
 $(document).on('pageinit', function() {
-	
+	serlayout();
 });
 
 // Update Pids from index.cgi
@@ -169,11 +281,19 @@ function update_pids() {
 	.fail(function(resp) {
 		$("#scanner").attr("style", "color:red").html("Failed to query PID");
 		console.log( "ajax_post", "error", resp );
-	})
-	.always(function(resp) {
-		//console.log( "ajax_post", "finished", resp );
 	});
 }
+
+function serlayout() {
+	if (<TMPL_VAR DONGLE.count> > 1) {
+        $(".serial-group").show();
+		$(".serial-group-d2").show();
+    } else {
+        $(".serial-group").hide();
+		$(".serial-group-d2").hide();
+    }
+}
+
 
 
 
@@ -183,6 +303,7 @@ $(document).ready( function ()  {
 		});	
 		setInterval(function(){ update_pids(); }, 10000);
 		update_pids();
+		//serlayout();
 });
 	
 

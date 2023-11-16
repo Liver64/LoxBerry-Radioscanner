@@ -9,17 +9,17 @@ require_once "phpMQTT/phpMQTT.php";
 $configfile	= "config.cfg";
 $rtl_433_configfile	= "rtl_433.conf";
 
-#echo "<PRE>";
+echo "<PRE>";
 
 # load Plugin Configuration
 if (file_exists($lbpconfigdir . "/" . $configfile))    {
-	#$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	$config = parse_ini_file($lbpconfigdir.'/'.$configfile, TRUE);
 } else {
 	echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 	exit;
 }
 #print_r($config);
+
 
 # load MQTT Details
 $creds = mqtt_connectiondetails();
@@ -61,12 +61,7 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 		fwrite($file,"verbose 7\r\n");
 		fwrite($file,"verbose 8\r\n");
 	}
-	# If ID = Serial Number or ID
-	if (substr($config['DONGLE1']['ID'], 0, 5) == "00000")  {
-		fwrite($file,"device :".$config['DONGLE1']['ID']."\r\n");
-	} else {
-		fwrite($file,"device ".$config['DONGLE1']['ID']."\r\n");
-	}
+	fwrite($file,"device :".trim($config['DONGLE1']['Serial']??'')."\r\n");
 	fwrite($file,"frequency ".$config['DONGLE1']['freq1']."\r\n");
 	# Check for other Frequences entered
 	if ($config['DONGLE1']['freq2'] != "0")  {

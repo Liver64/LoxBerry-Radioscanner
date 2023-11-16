@@ -25,18 +25,9 @@ use LoxBerry::Web;
 use LoxBerry::Log;
 use LoxBerry::IO;
 use LoxBerry::JSON;
-
-use CGI::Carp qw(fatalsToBrowser);
-use CGI qw/:standard/;
-use CGI;
-use LWP::UserAgent;
-use File::HomeDir;
-use Cwd 'abs_path';
-use JSON qw( decode_json );
-use utf8;
 use warnings;
 use strict;
-use Data::Dumper;
+#use Data::Dumper;
 
 ##########################################################################
 # Generic exception handler
@@ -66,7 +57,6 @@ my $helplink = "to be created";
 my $error_message = "";
 our $log = LoxBerry::Log->new ( name => 'Radioscanner UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
 our $pcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
-#my %Config = $pcfg->vars() if ( $pcfg );
 our $plugin = LoxBerry::System::plugindata();
 
 ##########################################################################
@@ -109,15 +99,6 @@ if( $q->{ajax} )
 }
 
 
-
-#my $saveformdata = defined $R::saveformdata ? $R::saveformdata : undef;
-#my $do = defined $R::do ? $R::do : "form";
-
-# Wir holen uns die Plugin-Config in den Hash %pcfg. Damit kannst du die Parameter mit $pcfg{'Section.Label'} direkt auslesen.
-#my %pcfg;
-#tie %pcfg, "Config::Simple", "$lbpconfigdir/$pluginconfigfile";
- 
-
 ##########################################################################
 # Initiate Main Template
 ##########################################################################
@@ -149,8 +130,6 @@ if (-e $tmp_log_file) {
 	open(FH, '<', $tmp_log_file) or die $!;
 	while(<FH>){
 		$oldlog = $_;
-		#LOGERR "old Log: " . $oldlog;
-		#LOGERR "act Log: " . $act_level;
 	}
 	if ($oldlog ne $act_level)   {
 		unlink($tmp_log_file);
@@ -191,6 +170,10 @@ if(!defined $R::do or $R::do eq "form") {
 	$template->param("LOGFILES", "1");
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
 	printtemplate();
+} elsif ($R::do eq "serialno") {
+	$template->param("FORM", "1");
+	change_serial();
+	&form;
 }
 
 
@@ -204,25 +187,39 @@ exit;
 
 sub form 
 {
-	# detect SDR Dongles
+	# detect an list SDR Dongles
 	our $count;
-	system($lbpbindir . '/service.sh');
-	my $filename = '/tmp/dvb-dongle.txt';
-	open my $in, $filename;
+	our $line_sn;
 	my $dongle_list;
 	my $counter;
+	
+	system($lbpbindir . '/service.sh');
+	my $filename = '/tmp/dvb-dongle.txt';
+	my $serials = '/tmp/dvb-dongle_serial.txt';
+	open my $in, $filename;
+	open my $sn, $serials;
+	
 	while (my $line = <$in>) {
+		while ($line_sn = <$sn>) {
 			$counter++;
-            $dongle_list.= $counter -1 .": ". $line.'<br>';
-        }
+			$dongle_list.= $counter -1 .": ". $line .' SN: '. $line_sn.'<br>';
+			$line_sn =~ s/(\r?\n|\r\n?)+$//;
+			$pcfg->param("DONGLE".$counter.".Serial", $line_sn);
+		}
+    }
+			
+	# count dongles and push to Template
 	$count = `wc -l < $filename`;
 	if ($count < 1)  {
 		$dongle_list = "****** No RTL-SDR compatible DVB-T Dongles detected ******";
 	} else {
-		$template->param("COUNT_DONGLE", $count);
+		$count =~ s/(\r?\n|\r\n?)+$//;
+		$pcfg->param("DONGLE.count", $count);
+		$pcfg->save() or &error;
 	}
-    $template->param("SC_LIST", $dongle_list);
+    $template->param("USB_LIST", $dongle_list);
 	close($in);
+	close($sn);
 	
 	printtemplate();
 	exit;
@@ -234,14 +231,41 @@ sub form
 
 sub save 
 {
-	$pcfg->param("DONGLE1.ID", "$R::d1id1");
+	$pcfg->param("DONGLE.count", "$R::countdongles");
+	#
+	#$pcfg->param("DONGLE1.Serial", "\"$R::d1id1\"");
 	$pcfg->param("DONGLE1.freq1", "$R::d1freq1");
 	$pcfg->param("DONGLE1.freq2", "$R::d1freq2");
 	$pcfg->param("DONGLE1.freq3", "$R::d1freq3");
 	$pcfg->param("DONGLE1.freq4", "$R::d1freq4");
 	$pcfg->param("DONGLE1.sample", "$R::d1sample");
 	$pcfg->param("DONGLE1.hop", "$R::d1hop");
-	#$pcfg->param("VARIOUS.donate", "$R::donate");
+	if ($R::countdongles eq "2")  {
+		#$pcfg->param("DONGLE2.Serial", "\"$R::d2id1\"");
+		$pcfg->param("DONGLE2.freq1", "$R::d2freq1");
+		$pcfg->param("DONGLE2.freq2", "$R::d2freq2");
+		$pcfg->param("DONGLE2.freq3", "$R::d2freq3");
+		$pcfg->param("DONGLE2.freq4", "$R::d2freq4");
+		$pcfg->param("DONGLE2.sample", "$R::d2sample");
+		$pcfg->param("DONGLE2.hop", "$R::d2hop");
+	}
+	if ($R::countdongles eq "3")  {
+		#$pcfg->param("DONGLE2.Serial", "$R::d2id1");
+		$pcfg->param("DONGLE2.freq1", "$R::d2freq1");
+		$pcfg->param("DONGLE2.freq2", "$R::d2freq2");
+		$pcfg->param("DONGLE2.freq3", "$R::d2freq3");
+		$pcfg->param("DONGLE2.freq4", "$R::d2freq4");
+		$pcfg->param("DONGLE2.sample", "$R::d2sample");
+		$pcfg->param("DONGLE2.hop", "$R::d2hop");
+		
+		#$pcfg->param("DONGLE3.Serial", "$R::d3id1");
+		$pcfg->param("DONGLE3.freq1", "$R::d3freq1");
+		$pcfg->param("DONGLE3.freq2", "$R::d3freq2");
+		$pcfg->param("DONGLE3.freq3", "$R::d3freq3");
+		$pcfg->param("DONGLE3.freq4", "$R::d3freq4");
+		$pcfg->param("DONGLE3.sample", "$R::d3sample");
+		$pcfg->param("DONGLE3.hop", "$R::d3hop");
+	}
 	
 	$pcfg->save() or &error;
 	
@@ -304,6 +328,30 @@ sub rtl_433_form
 	system("sudo systemctl stop rtl_433-mqtt.service");
 	# Create rtl_433.conf file
 	my $file = qx(/usr/bin/php $lbphtmldir/create_conf.php);
+	# Start Service using newly created file
+	system("sudo systemctl start rtl_433-mqtt.service");
+	return;
+
+}
+
+########################################################################
+# change Serial Form 
+########################################################################
+sub change_serial
+{
+
+	# Stop Service
+	system("sudo systemctl stop rtl_433-mqtt.service");
+	sleep (2);
+	# Create rtl_433.conf file
+	#my $file = qx(/bin/bash $lbpbindir/create_serial.sh $R::did, $R::didser);
+	my $ser1 = $R::did;
+	my $ser2 = $R::didser;
+	#my $test = "yes 2>/dev/null | rtl_eeprom '$ser1 $ser2' > /dev/null 2>&1";
+	LOGERR "$R::did";
+	LOGERR "$R::didser";
+	#system("yes 2>/dev/null | rtl_eeprom -d0 -s00000108 > /dev/null 2>&1");
+	notify( $lbpplugindir, "Radioscanner", "Please restart LoxBerry or unplug/plugin the Dongle in order to apply the changed Serial No.");
 	# Start Service using newly created file
 	system("sudo systemctl start rtl_433-mqtt.service");
 	return;
