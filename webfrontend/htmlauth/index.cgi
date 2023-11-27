@@ -53,8 +53,6 @@ our $tmp_log_file = "/tmp/scan4lox_log.tmp";
 our $resp;
 my $pluginconfigfile = "config.cfg";
 my $pluginlogfile = "rscan4lox.log";
-my $helptemplate = "help.html";
-my $helplink = "to be created";
 my $error_message = "";
 our $log = LoxBerry::Log->new ( name => 'Radioscanner UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
 our $pcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
@@ -414,7 +412,7 @@ sub rtl_433_form
 	# Stop Service
 	system("sudo systemctl stop rtl_433-mqtt.service");
 	# Create rtl_433.conf file
-	my $file = qx(/usr/bin/php $lbphtmldir/create_conf.php);
+	my $file = qx(/usr/bin/php $lbpbindir/create_conf.php);
 	# Start Service using newly created file
 	system("sudo systemctl start rtl_433-mqtt.service");
 	return;
@@ -437,7 +435,7 @@ sub change_serial
 	#LOGERR $R::d1freq1;
 	#LOGERR $SerialNo;
 	#&form;
-	#my $file = qx(/usr/bin/php $lbphtmldir/create_conf.php);
+	#my $file = qx(/usr/bin/php $lbpbindir/create_conf.php);
 	system("sudo systemctl start rtl_433-mqtt.service");
 	notify( $lbpplugindir, "Radioscanner", "Please restart LoxBerry or unplug/plugin the Dongle in order to apply the changed Serial No.");
 	printtemplate();
