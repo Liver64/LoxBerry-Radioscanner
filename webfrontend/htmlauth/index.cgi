@@ -174,7 +174,7 @@ my $dongle_list;
 my $counter;
 my $file = '/tmp/final_dongles.txt';
 
-my $fileexe = qx(/usr/bin/php $lbphtmldir/get_dongles.php);
+my $fileexe = qx(/usr/bin/php $lbpbindir/get_dongles.php);
 my $json = LoxBerry::JSON->new();
 $list = $json->open(filename => $file, readonly => 1);
 foreach my $key (keys %$list) {
