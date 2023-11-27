@@ -1,0 +1,9 @@
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_433  
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_adsb
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_biast
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_eeprom
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_fm
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_power
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_sdr
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_tcp
+loxberry ALL = NOPASSWD: /usr/local/bin/rtl_test
