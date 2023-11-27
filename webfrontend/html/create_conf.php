@@ -77,7 +77,12 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 		$hopp = "1";
 	} 
 	if ($config['DONGLE1']['freq4'] != "0" and !empty($config['DONGLE1']['freq4']))  {
-		fwrite($file,"frequency ".$config['DONGLE1']['freq4']."M\r\n");
+		$len = strlen($config['DONGLE1']['freq4']);
+		if ($len === 9)   {
+			fwrite($file,"frequency ".$config['DONGLE1']['freq4']."\r\n");
+		} else {
+			fwrite($file,"frequency ".$config['DONGLE1']['freq4']."M\r\n");
+		}
 		$hopp = "1";
 	}
 	# If more then one frequence entered add hop interval
@@ -103,7 +108,7 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 	#fwrite($file,"analyze_pulses false\r\n");
 	fwrite($file,"report_meta time:unix\r\n");
 	fwrite($file,"report_meta protocol\r\n");
-	#fwrite($file,"signal_grabber none\r\n");
+	fwrite($file,"pulse_detect auto\r\n");
 	# MQTT Credentials and output
 	fwrite($file,"output mqtt://".$creds['brokeraddress'].",user=".$creds['brokeruser'].",pass=".$creds['brokerpass'].",retain=0,devices=rtl_433[/protocol]\r\n");
 	# path to Log file
