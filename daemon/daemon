@@ -3,6 +3,8 @@
 # Check if it is running and get PID
 pgrep rtl_433
 
+/usr/bin/php -q REPLACELBPHTMLDIR/create_conf.php &
+
 exitcode=$?
 if [[ $exitcode != 0 ]]; 
 then

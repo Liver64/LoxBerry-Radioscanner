@@ -18,8 +18,12 @@ if (file_exists($lbpconfigdir . "/" . $configfile))    {
 	echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 	exit;
 }
-#print_r($config);
+print_r($config);
 
+# Explore Protocols
+$prot = explode(':',$config['DONGLE1']['protocols']);
+# check if entries exists;
+$containsEmpty = in_array("", $prot);
 
 # load MQTT Details
 $creds = mqtt_connectiondetails();
@@ -78,9 +82,21 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 	}
 	# If more then one frequence entered add hop interval
 	if ($hopp == "1")  {
-		fwrite($file,"hop_interval ".$config['DONGLE1']['hop']."\r\n");
+		if (!empty($config['DONGLE1']['hop']))  {
+			fwrite($file,"hop_interval ".$config['DONGLE1']['hop']."\r\n");
+		# If hop interval not been entered set default to 60
+		} else {
+			fwrite($file,"hop_interval 60\r\n");
+		}
+	}
+	# If dedicated Protocols were selected
+	if (!$containsEmpty)   {
+		foreach ($prot as $item)  {
+			fwrite($file,"protocol ".$item."\r\n");
+		}
 	}
 	#fwrite($file,"gain 0\r\n");
+	fwrite($file,"convert si\r\n");
 	fwrite($file,"sample_rate ".$config['DONGLE1']['sample']."\r\n");
 	#fwrite($file,"ppm_error 0\r\n");
 	#fwrite($file,"samples_to_read 0\r\n");

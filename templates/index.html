@@ -49,29 +49,30 @@
 						</div>
 					</td>
 				</tr>
-			<div class="serial-group" data-role="collapsible">>	
+			<div class="serial-group" data-role="collapsible">	
 				<tr>
-					<td class="serial-group" style="height: 41px; width: 4%;">
+					<td class="serial-group" style="height: 41px; width: 20%;">
 					</td>
-					<td class="serial-group" valign="left" style="height: 41px; width: 20%;">
-					<table class="serial-group" style="width=100%" cellpadding="2" cellspacing="0" border-radius="5px"; id="tblserial" name="tblserial">
-						<td style="height: 41px; width: 3%;">
-							<label valign="left" id="lsn"><TMPL_VAR HW.CARD_NO></label>
-						</td>
-						<td valign="left" style="height: 41px; width: 1%;">
-							<input disabled valign="left" id="did" name="did" type="text" class="textfield" value="0"
-								data-validation-error-msg="Bitte korrigieren" 
-								data-validation-rule="^([0-9]){1}$"">
-						</td>
-						<td valign="left" style="height: 41px; width: 2%;">
-							<input disabled valign="left" placeholder= "New Serial" id="didser" name="didser" type="text" class="textfield" value="<TMPL_VAR DONGLE1.Serial>"
-								data-validation-error-msg="Bitte korrigieren" 
-								data-validation-rule="^([0-9]){8}$"">
-						</td>
-						<td style="height: 41px; width: 4%;">
-							<!--<a id="btnserial" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=serialno"><TMPL_VAR DONGLE.CREATE_SER_BUTTON></a>-->
-						</td>
-					</table>
+					<td class="serial-group" valign="left" style="height: 41px; width: 100%;">
+						<table class="serial-group" style="width=100%" cellpadding="2" cellspacing="0" border-radius="5px"; id="tblserial" name="tblserial">
+							<td style="height: 41px; width: 25%;">
+								<label valign="left" id="lsn"><TMPL_VAR HW.CARD_NO></label>
+							</td>
+							<td valign="left" style="height: 41px; width: 5%;">
+								<input valign="left" id="did" name="did" type="text" class="textfield" value="" placeholder="0"
+									data-validation-error-msg="Bitte korrigieren" 
+									data-validation-rule="^([0-9]){1}$"">
+							</td>
+							<td valign="left" style="height: 41px; width: 11%;">
+								<input valign="left" placeholder="<TMPL_VAR DONGLE.PL_SER>" id="didser" name="didser" type="text" class="textfield" value="">
+								
+							</td>
+							<td style="height: 41px; width: 15%;">
+								<a id="btnserial" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="createSerial()"><TMPL_VAR DONGLE.CREATE_SER_BUTTON></a>
+							</td>
+							<td id="info" name="info" style="width: 44%; height: 41px;">
+							</td>
+						</table>
 					</td>
 				</tr>
 			</div>
@@ -87,7 +88,7 @@
 								<label id="lid"><TMPL_VAR DONGLE.ID></label>
 							</td>
 							<td style="width: 8%; height: 48px">
-								<input disabled style="background-color: #e6e6e6;" id="d1id1" name="d1id1" type="text" class="textfield" placeholder= "Serial" value="<TMPL_VAR DONGLE1.Serial>">
+								<input style="background-color: #e6e6e6;" id="d1id1" name="d1id1" type="text" class="textfield" placeholder= "Serial" value="<TMPL_VAR DONGLE1.Serial>">
 							</td>
 							<td style="height: 48px; width: 2%">
 								<label id="ldongle"><TMPL_VAR DONGLE.LFREQ></label>
@@ -157,6 +158,26 @@
 							</td>
 							</tr>
                         </table>
+						
+						<!-- load Sensors-->
+						<tr>
+							<td width="25%"></td>
+								<td width="70%">
+									<div data-role="collapsible">
+										<h1><TMPL_VAR BASIS.PROTOCOLS></h1>
+											<fieldset data-role="controlgroup">
+												<TMPL_VAR SENSORS>
+												<!--<div id="dynamic_div_d1"></div>-->
+												
+											</fieldset>
+											
+									</div>
+									<font size="-1" color="blue"><TMPL_VAR BASIS.PROTOCOLS_NOTICE></font>
+								</td>
+							<td width="5%"></td>
+							<td width="20%"></td>
+						</tr>
+						
                 </tr>
 				
 				<!-- Dongle #2-->
@@ -261,7 +282,9 @@
 <script>
 
 $(document).on('pageinit', function() {
-	serlayout();
+	layout();
+	$("#info").empty();
+
 });
 
 // Update Pids from index.cgi
@@ -284,16 +307,67 @@ function update_pids() {
 	});
 }
 
-function serlayout() {
-	if (<TMPL_VAR DONGLE.count> > 1) {
-        $(".serial-group").show();
+function isNumeric(num){
+  return !isNaN(num);
+}
+
+function createSerial() {
+	// validate input
+	var newservalue = document.getElementById("didser").value;
+	var newserlength = document.getElementById("didser").value.length;
+	var newsernumeric = isNumeric(newservalue);
+	//console.log(newservalue);
+	//console.log(newserlength);
+	//console.log(isNumeric(newservalue));
+	$("#info").empty();
+	if (newserlength != "3")   {
+		$("#info").attr("style", "color:red");
+		$("#info").text("<TMPL_VAR MESSAGE.ERROR_LENGTH>");
+		return;
+	}
+	if (newsernumeric == false)   {
+		$("#info").attr("style", "color:red");
+		$("#info").text("<TMPL_VAR MESSAGE.ERROR_NUMBER>");
+		return;
+	}
+	$("#info").attr("style", "color:blue");
+	$("#info").text("<TMPL_VAR MESSAGE.INFO_SERIAL>");
+	//return;
+
+	let resp;
+	$.ajax({
+			url: 'index.cgi',
+			type: 'post',
+			data: { 
+					action: 'create_serial',
+					Serial: $("#didser").val(),
+					DNumber: $("#did").val(),
+				},
+				success: function(resp) {}
+			})
+			.done(function(resp) {
+				console.log("Response: "+ resp);
+				if(resp == true){
+					console.log(resp);
+				} else {
+					console.log(resp);
+				}
+			})
+			.always(function(resp) {
+				console.log( "Action completed");
+			});
+}
+
+function layout() {
+	if (<TMPL_VAR DONGLE.count> > 1 ) {
+        $(".serial-group").hide();
 		$(".serial-group-d2").show();
     } else {
-        $(".serial-group").hide();
+		
+		$(".serial-group").show();
 		$(".serial-group-d2").hide();
     }
 }
-
 
 
 
@@ -301,10 +375,18 @@ $(document).ready( function ()  {
 		$("form#main_form").submit(function(e) {
 			
 		});	
-		setInterval(function(){ update_pids(); }, 10000);
+		setInterval(function(){ update_pids(); }, 5000);
 		update_pids();
-		//serlayout();
-});
+		
+		//var newser = document.getElementById("didser").value;
+		//var newser1 = document.getElementById("didser").value.length;
+		//console.log(newser);
+		//console.log(newser1);
+		//if (document.getElementById("didser").value)   {
+			//validate_enable('#didser');
+			//validate_chk_object(['#didser']);
+		//}
+})
 	
 
 </script>

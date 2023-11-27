@@ -10,4 +10,3 @@ libtool
 librtlsdr-dev
 pkg-config
 doxygen
-#supervisor

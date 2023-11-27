@@ -26,8 +26,8 @@ use LoxBerry::Log;
 use LoxBerry::IO;
 use LoxBerry::JSON;
 use warnings;
-use strict;
-#use Data::Dumper;
+#use strict;
+use Data::Dumper;
 
 ##########################################################################
 # Generic exception handler
@@ -36,7 +36,7 @@ use strict;
 # Every non-handled exceptions sets the @reason variable that can
 # be written to the logfile in the END function
 
-$SIG{__DIE__} = sub { our @reason = @_ };
+#$SIG{__DIE__} = sub { our @reason = @_ };
 
 ##########################################################################
 # Variables
@@ -47,8 +47,10 @@ our $navbar;
 our $lbptemplatedir;
 our $content;
 our %navbar;
+our $SerialNo;
 our $templatefile = "index.html";
 our $tmp_log_file = "/tmp/scan4lox_log.tmp";
+our $resp;
 my $languagefile  = "rscan.ini";
 my $pluginconfigfile = "config.cfg";
 my $pluginlogfile = "rscan4lox.log";
@@ -76,10 +78,11 @@ my $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 our $cgi = CGI->new;
 $cgi->import_names('R');
 
+#LOGSTART "Radioscanner UI started";
 
 
 #########################################################################
-## Handle all ajax requests 
+## Handle ajax requests 
 #########################################################################
 
 our $q = $cgi->Vars;
@@ -88,7 +91,6 @@ my %pids;
 if( $q->{ajax} ) 
 {
 	my %response;
-		
 	ajax_header();
 	if( $q->{ajax} eq "getpids" ) {
 		pids();
@@ -98,13 +100,31 @@ if( $q->{ajax} )
 	exit;
 }
 
+if( $q->{action} ) 
+{
+	ajax_header_text();
+	if( $q->{action} eq "create_serial" ) {
+		$SerialNo = $q->{'Serial'};
+		our $No = $q->{'DNumber'};
+		#LOGERR $SerialNo;
+		#LOGERR $No;
+		change_serial();
+		#LOGERR $resp;
+		print $resp;
+		&form;
+	}
+	exit;
+}
+
+
+
 
 ##########################################################################
 # Initiate Main Template
 ##########################################################################
 inittemplate();
-
-
+LOGSTART "Radioscanner started";
+#LOGERR "$log->loglevel()";
 ##########################################################################
 # Set LoxBerry SDK to debug in plugin 
 ##########################################################################
@@ -114,9 +134,14 @@ if($log->loglevel() eq "7") {
 	$LoxBerry::Web::DEBUG 		= 1;
 	$LoxBerry::Log::DEBUG		= 1;
 	$LoxBerry::JSON::DEBUG		= 1;
+	$LoxBerry::JSON::DUMP 		= 1;
 }
 
-LOGSTART "Radioscanner UI started";
+# übergibt Plugin Verzeichnis an HTML
+$template->param("PLUGINDIR" => $lbpplugindir);
+$template->param("CONFIGDIR" => $lbpconfigdir);
+
+#LOGSTART "Radioscanner started";
 
 
 ##########################################################################
@@ -144,6 +169,45 @@ if (-e $tmp_log_file) {
 close(FH);
 
 
+# detect and list SDR Dongles
+our $count;
+our $line_sn;
+our $list;
+my $dongle_list;
+my $counter;
+my $file = '/tmp/final_dongles.txt';
+
+my $fileexe = qx(/usr/bin/php $lbphtmldir/get_dongles.php);
+my $json = LoxBerry::JSON->new();
+$list = $json->open(filename => $file, readonly => 1);
+foreach my $key (keys %$list) {
+	$counter++;
+	my $countd = $counter -1;
+	$dongle_list .= '<b>#<font color="blue">'.$countd .'</font></b>: '. $list->{$key} .' Serial: <b><font color="blue">'. $key. '</font></b><br>';
+	$pcfg->param("DONGLE".$counter.".Serial", $key);
+}
+
+# count dongles and push to Template
+$count = %$list;
+if ($count < 1)  {
+	$dongle_list = "****** No RTL-SDR compatible DVB-T Dongles detected ******";
+} else {
+	$count =~ s/(\r?\n|\r\n?)+$//;
+	$pcfg->param("DONGLE.count", $count);
+	$pcfg->save() or &error;
+}
+$template->param("USB_LIST", $dongle_list);
+
+	
+# create array of Sensors/Protocols
+my $rowprotocols;
+my $protocolfile = "$lbpconfigdir/protocols/rtl_433_protocols.json";
+	
+my $jsonparse = LoxBerry::JSON->new();
+$list = $jsonparse->open(filename => $protocolfile, readonly => 1);
+my @array = @{[ @$list ]};
+
+# Create Navbars
 $navbar{1}{Name} = "$L{'BASIS.MENU_SETTINGS'}";
 $navbar{1}{URL} = './index.cgi';
 $navbar{99}{Name} = "$L{'BASIS.MENU_LOGFILES'}";
@@ -170,57 +234,57 @@ if(!defined $R::do or $R::do eq "form") {
 	$template->param("LOGFILES", "1");
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
 	printtemplate();
-} elsif ($R::do eq "serialno") {
-	$template->param("FORM", "1");
-	change_serial();
-	&form;
 }
-
 
 $error_message = "Invalid do parameter: ".$R::do;
 &error;
 exit;
+
 
 #####################################################
 # Form-Sub
 #####################################################
 
 sub form 
-{
-	# detect an list SDR Dongles
-	our $count;
-	our $line_sn;
-	my $dongle_list;
-	my $counter;
-	
-	system($lbpbindir . '/service.sh');
-	my $filename = '/tmp/dvb-dongle.txt';
-	my $serials = '/tmp/dvb-dongle_serial.txt';
-	open my $in, $filename;
-	open my $sn, $serials;
-	
-	while (my $line = <$in>) {
-		while ($line_sn = <$sn>) {
-			$counter++;
-			$dongle_list.= $counter -1 .": ". $line .' SN: '. $line_sn.'<br>';
-			$line_sn =~ s/(\r?\n|\r\n?)+$//;
-			$pcfg->param("DONGLE".$counter.".Serial", $line_sn);
+{	
+	# Sensors
+	my $sensors;
+	my $checked;
+	#my @fields;
+	my $i;
+	our $array;
+
+	  #@fields = split(/,/,$pcfg->param('DONGLE1.protocols'));
+	  # 1st line toggle
+	  #$sensors .= $cgi->checkbox(
+			#-name    => "Protocols",
+			#-id      => "handle",
+			#-checked => $checked,
+			#-value   => '',
+			#-label   => "select all / unselect all",
+		 #);
+	  # Set selected values
+	  for ($i=1;$i<=$#array;$i++) {
+		$checked = 0;
+		foreach (split(/:/,$pcfg->param('DONGLE1.protocols')))  {
+		  if ($_ eq $array[$i]->{value}) {
+			$checked = 1;
+		  }
 		}
-    }
-			
-	# count dongles and push to Template
-	$count = `wc -l < $filename`;
-	if ($count < 1)  {
-		$dongle_list = "****** No RTL-SDR compatible DVB-T Dongles detected ******";
-	} else {
-		$count =~ s/(\r?\n|\r\n?)+$//;
-		$pcfg->param("DONGLE.count", $count);
-		$pcfg->save() or &error;
-	}
-    $template->param("USB_LIST", $dongle_list);
-	close($in);
-	close($sn);
+		# list all Sensors from array
+		$sensors .= $cgi->checkbox(
+			-name    => "sensors$array[$i]->{value}",
+			-id      => "sensors$array[$i]->{value}",
+			-class   => "toggle",
+			-checked => $checked,
+			-value   => $array[$i]->{value},
+			-label   => $array[$i]->{protocol}." ".$array[$i]->{description},
+		  );
+	  }
+	  $template->param( SENSORS => $sensors );
 	
+	#$content = $element;
+	#print_test($content);
 	printtemplate();
 	exit;
 }
@@ -232,7 +296,7 @@ sub form
 sub save 
 {
 	$pcfg->param("DONGLE.count", "$R::countdongles");
-	#
+
 	#$pcfg->param("DONGLE1.Serial", "\"$R::d1id1\"");
 	$pcfg->param("DONGLE1.freq1", "$R::d1freq1");
 	$pcfg->param("DONGLE1.freq2", "$R::d1freq2");
@@ -240,6 +304,20 @@ sub save
 	$pcfg->param("DONGLE1.freq4", "$R::d1freq4");
 	$pcfg->param("DONGLE1.sample", "$R::d1sample");
 	$pcfg->param("DONGLE1.hop", "$R::d1hop");
+	
+	# save all selected sensors/protocols
+	our $sensors;
+	for (my $i=1;$i<=$#array;$i++) {
+ 		if ( ${"R::sensors$array[$i]->{value}"} )   {
+			if ( !$sensors ) {
+				$sensors = "$array[$i]->{value}";
+			} else {
+				$sensors = "$sensors".":"."$array[$i]->{value}";
+			}
+		}
+	}
+	$pcfg->param("DONGLE1.protocols", "$sensors");
+	
 	if ($R::countdongles eq "2")  {
 		#$pcfg->param("DONGLE2.Serial", "\"$R::d2id1\"");
 		$pcfg->param("DONGLE2.freq1", "$R::d2freq1");
@@ -315,6 +393,16 @@ sub ajax_header
 			-status => '200 OK',
 	);	
 	#LOGOK "AJAX posting received and processed";
+}
+
+sub ajax_header_text
+{
+	print $cgi->header(
+			-type => 'text/plain',
+			-charset => 'utf-8',
+			-status => '200 OK',
+	);	
+	#LOGOK "AJAX posting received and processed";
 
 }
 
@@ -339,21 +427,24 @@ sub rtl_433_form
 ########################################################################
 sub change_serial
 {
-
+	#$template->param( FORMNO => 'form' );
 	# Stop Service
 	system("sudo systemctl stop rtl_433-mqtt.service");
+	#LOGERR $No;
+	#LOGERR $SerialNo;
 	sleep (2);
-	# Create rtl_433.conf file
-	#my $file = qx(/bin/bash $lbpbindir/create_serial.sh $R::did, $R::didser);
-	my $ser1 = $R::did;
-	my $ser2 = $R::didser;
-	#my $test = "yes 2>/dev/null | rtl_eeprom '$ser1 $ser2' > /dev/null 2>&1";
-	LOGERR "$R::did";
-	LOGERR "$R::didser";
-	#system("yes 2>/dev/null | rtl_eeprom -d0 -s00000108 > /dev/null 2>&1");
-	notify( $lbpplugindir, "Radioscanner", "Please restart LoxBerry or unplug/plugin the Dongle in order to apply the changed Serial No.");
-	# Start Service using newly created file
+	system("yes 2>/dev/null | rtl_eeprom -d".$No." -s00000".$SerialNo." > /dev/null 2>&1");
+	$pcfg->param("DONGLE1.Serial", "00000".$SerialNo);
+	#LOGERR $R::d1freq1;
+	#LOGERR $SerialNo;
+	#&form;
+	#my $file = qx(/usr/bin/php $lbphtmldir/create_conf.php);
 	system("sudo systemctl start rtl_433-mqtt.service");
+	notify( $lbpplugindir, "Radioscanner", "Please restart LoxBerry or unplug/plugin the Dongle in order to apply the changed Serial No.");
+	printtemplate();
+	LOGERR $SerialNo;
+	# Start Service using newly created file
+	#&form;
 	return;
 
 }
@@ -375,7 +466,7 @@ sub printtemplate
 # Print for testing
 ##########################################################################
 
-sub print_test
+sub print_test($content)
 {
 	# Print Template
 	print "Content-Type: text/html; charset=utf-8\n\n"; 
@@ -386,7 +477,7 @@ sub print_test
 	print "*********************************************************************************************";
 	print "<br>";
 	print "<br>";
-	print $content; 
+	print Dumper($content); 
 	exit;
 }
 
