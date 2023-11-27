@@ -103,6 +103,8 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 	#fwrite($file,"analyze_pulses false\r\n");
 	fwrite($file,"report_meta time:unix\r\n");
 	fwrite($file,"report_meta protocol\r\n");
+	fwrite($file,"report_meta noise\r\n");
+	fwrite($file,"report_meta level\r\n");
 	#fwrite($file,"signal_grabber none\r\n");
 	# MQTT Credentials and output
 	fwrite($file,"output mqtt://".$creds['brokeraddress'].",user=".$creds['brokeruser'].",pass=".$creds['brokerpass'].",retain=0,devices=rtl_433[/protocol][/model][/id]\r\n");
