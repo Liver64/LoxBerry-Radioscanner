@@ -51,7 +51,6 @@ our $SerialNo;
 our $templatefile = "index.html";
 our $tmp_log_file = "/tmp/scan4lox_log.tmp";
 our $resp;
-my $languagefile  = "rscan.ini";
 my $pluginconfigfile = "config.cfg";
 my $pluginlogfile = "rscan4lox.log";
 my $helptemplate = "help.html";
@@ -372,7 +371,7 @@ sub inittemplate
 				debug => 1,
 				);
 	# getting language file loaded
-	our %L = LoxBerry::System::readlanguage($template, $languagefile);
+	our %L = LoxBerry::System::readlanguage($template, 'language.ini');
 }
 
 ######################################################################
