@@ -452,7 +452,7 @@ sub change_serial
 
 sub printtemplate
 {	
-	LoxBerry::Web::lbheader("$plugin->{PLUGINDB_TITLE} v$version", $helplink, $helptemplate);
+	LoxBerry::Web::lbheader("$plugin->{PLUGINDB_TITLE} v$version", "https://wiki.loxberry.de/plugins/radioscanner/start", "");
 	print LoxBerry::Log::get_notifications_html($lbpplugindir);
 	print $template->output();
 	LoxBerry::Web::lbfooter();
