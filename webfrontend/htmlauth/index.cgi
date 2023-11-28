@@ -51,12 +51,18 @@ our $SerialNo;
 our $templatefile = "index.html";
 our $tmp_log_file = "/tmp/scan4lox_log.tmp";
 our $resp;
-my $pluginconfigfile = "config.cfg";
+our $jsonobj;
+our $pluginconfigjsonfile = "config.json";
 my $pluginlogfile = "rscan4lox.log";
 my $error_message = "";
+my $helplink;
+my $helptemplate;
 our $log = LoxBerry::Log->new ( name => 'Radioscanner UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
-our $pcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 our $plugin = LoxBerry::System::plugindata();
+
+my $jsonobj = LoxBerry::JSON->new();
+our $cfg = $jsonobj->open(filename => $lbpconfigdir . "/" . $pluginconfigjsonfile, writeonclose => 0);
+
 
 ##########################################################################
 # Read Settings
@@ -74,8 +80,6 @@ my $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 # read all POST-Parameter in namespace "R".
 our $cgi = CGI->new;
 $cgi->import_names('R');
-
-#LOGSTART "Radioscanner UI started";
 
 
 #########################################################################
@@ -103,25 +107,19 @@ if( $q->{action} )
 	if( $q->{action} eq "create_serial" ) {
 		$SerialNo = $q->{'Serial'};
 		our $No = $q->{'DNumber'};
-		#LOGERR $SerialNo;
-		#LOGERR $No;
 		change_serial();
-		#LOGERR $resp;
 		print $resp;
 		&form;
 	}
 	exit;
 }
 
-
-
-
 ##########################################################################
 # Initiate Main Template
 ##########################################################################
 inittemplate();
-LOGSTART "Radioscanner started";
-#LOGERR "$log->loglevel()";
+
+
 ##########################################################################
 # Set LoxBerry SDK to debug in plugin 
 ##########################################################################
@@ -165,7 +163,6 @@ if (-e $tmp_log_file) {
 }
 close(FH);
 
-
 # detect and list SDR Dongles
 our $count;
 our $line_sn;
@@ -181,7 +178,9 @@ foreach my $key (keys %$list) {
 	$counter++;
 	my $countd = $counter -1;
 	$dongle_list .= '<b>#<font color="blue">'.$countd .'</font></b>: '. $list->{$key} .' Serial: <b><font color="blue">'. $key. '</font></b><br>';
-	$pcfg->param("DONGLE".$counter.".Serial", $key);
+	$cfg->{"DONGLE".$counter}->{Serial} = $key;
+	$cfg->{"DONGLE".$counter}->{Number} = $countd;
+	$jsonobj->write();
 }
 
 # count dongles and push to Template
@@ -190,8 +189,8 @@ if ($count < 1)  {
 	$dongle_list = "****** No RTL-SDR compatible DVB-T Dongles detected ******";
 } else {
 	$count =~ s/(\r?\n|\r\n?)+$//;
-	$pcfg->param("DONGLE.count", $count);
-	$pcfg->save() or &error;
+	$cfg->{"DONGLE"}->{count} = $count;
+	$jsonobj->write();
 }
 $template->param("USB_LIST", $dongle_list);
 
@@ -203,6 +202,7 @@ my $protocolfile = "$lbpconfigdir/protocols/rtl_433_protocols.json";
 my $jsonparse = LoxBerry::JSON->new();
 $list = $jsonparse->open(filename => $protocolfile, readonly => 1);
 my @array = @{[ @$list ]};
+
 
 # Create Navbars
 $navbar{1}{Name} = "$L{'BASIS.MENU_SETTINGS'}";
@@ -247,26 +247,16 @@ sub form
 	# Sensors
 	my $sensors;
 	my $checked;
-	#my @fields;
 	my $i;
-	our $array;
+	my $array;
 
-	  #@fields = split(/,/,$pcfg->param('DONGLE1.protocols'));
-	  # 1st line toggle
-	  #$sensors .= $cgi->checkbox(
-			#-name    => "Protocols",
-			#-id      => "handle",
-			#-checked => $checked,
-			#-value   => '',
-			#-label   => "select all / unselect all",
-		 #);
-	  # Set selected values
-	  for ($i=1;$i<=$#array;$i++) {
+	# Set selected values
+	for ($i=1;$i<=$#array;$i++) {
 		$checked = 0;
-		foreach (split(/:/,$pcfg->param('DONGLE1.protocols')))  {
-		  if ($_ eq $array[$i]->{value}) {
-			$checked = 1;
-		  }
+		foreach (split(/:/,$cfg->{"DONGLE1"}->{protocols} ))  {
+			if ($_ eq $array[$i]->{value}) {
+				$checked = 1;
+			}
 		}
 		# list all Sensors from array
 		$sensors .= $cgi->checkbox(
@@ -277,8 +267,8 @@ sub form
 			-value   => $array[$i]->{value},
 			-label   => $array[$i]->{protocol}." ".$array[$i]->{description},
 		  );
-	  }
-	  $template->param( SENSORS => $sensors );
+	}
+	$template->param( SENSORS => $sensors );
 	
 	#$content = $element;
 	#print_test($content);
@@ -292,20 +282,25 @@ sub form
 
 sub save 
 {
-	$pcfg->param("DONGLE.count", "$R::countdongles");
-
-	#$pcfg->param("DONGLE1.Serial", "\"$R::d1id1\"");
-	$pcfg->param("DONGLE1.freq1", "$R::d1freq1");
-	$pcfg->param("DONGLE1.freq2", "$R::d1freq2");
-	$pcfg->param("DONGLE1.freq3", "$R::d1freq3");
-	$pcfg->param("DONGLE1.freq4", "$R::d1freq4");
-	$pcfg->param("DONGLE1.sample", "$R::d1sample");
-	$pcfg->param("DONGLE1.hop", "$R::d1hop");
+	#$cfg->{"DONGLE"}->{count} = $R::countdongles;
+	
+	$cfg->{"DONGLE1"}->{Serial} = $R::d1id1;
+	$cfg->{"DONGLE1"}->{freq1} = $R::d1freq1;
+	$cfg->{"DONGLE1"}->{freq2} = $R::d1freq2;
+	$cfg->{"DONGLE1"}->{freq3} = $R::d1freq3;
+	$cfg->{"DONGLE1"}->{freq4} = $R::d1freq4;
+	$cfg->{"DONGLE1"}->{sample} = $R::d1sample;
+	$cfg->{"DONGLE1"}->{hop} = $R::d1hop;
+	if ($R::countdongles eq "1")  {	
+		delete $cfg->{"DONGLE2"};
+		delete $cfg->{"DONGLE3"};
+	}
 	
 	# save all selected sensors/protocols
 	our $sensors;
 	for (my $i=1;$i<=$#array;$i++) {
  		if ( ${"R::sensors$array[$i]->{value}"} )   {
+		#if ( ${param("sensors$array[$i])->{value}"} )   {
 			if ( !$sensors ) {
 				$sensors = "$array[$i]->{value}";
 			} else {
@@ -313,37 +308,38 @@ sub save
 			}
 		}
 	}
-	$pcfg->param("DONGLE1.protocols", "$sensors");
+	$cfg->{"DONGLE1"}->{protocols} = $sensors;
 	
 	if ($R::countdongles eq "2")  {
-		#$pcfg->param("DONGLE2.Serial", "\"$R::d2id1\"");
-		$pcfg->param("DONGLE2.freq1", "$R::d2freq1");
-		$pcfg->param("DONGLE2.freq2", "$R::d2freq2");
-		$pcfg->param("DONGLE2.freq3", "$R::d2freq3");
-		$pcfg->param("DONGLE2.freq4", "$R::d2freq4");
-		$pcfg->param("DONGLE2.sample", "$R::d2sample");
-		$pcfg->param("DONGLE2.hop", "$R::d2hop");
+		$cfg->{"DONGLE2"}->{Serial} = $R::d2id1;
+		$cfg->{"DONGLE2"}->{freq1} = $R::d2freq1;
+		$cfg->{"DONGLE2"}->{freq2} = $R::d2freq2;
+		$cfg->{"DONGLE2"}->{freq3} = $R::d2freq3;
+		$cfg->{"DONGLE2"}->{freq4} = $R::d2freq4;
+		$cfg->{"DONGLE2"}->{sample} = $R::d2sample;
+		$cfg->{"DONGLE2"}->{hop} = $R::d2hop;
+		
+		delete $cfg->{"DONGLE3"};
 	}
 	if ($R::countdongles eq "3")  {
-		#$pcfg->param("DONGLE2.Serial", "$R::d2id1");
-		$pcfg->param("DONGLE2.freq1", "$R::d2freq1");
-		$pcfg->param("DONGLE2.freq2", "$R::d2freq2");
-		$pcfg->param("DONGLE2.freq3", "$R::d2freq3");
-		$pcfg->param("DONGLE2.freq4", "$R::d2freq4");
-		$pcfg->param("DONGLE2.sample", "$R::d2sample");
-		$pcfg->param("DONGLE2.hop", "$R::d2hop");
+		$cfg->{"DONGLE2"}->{Serial} = $R::d2id1;
+		$cfg->{"DONGLE2"}->{freq1} = $R::d2freq1;
+		$cfg->{"DONGLE2"}->{freq2} = $R::d2freq2;
+		$cfg->{"DONGLE2"}->{freq3} = $R::d2freq3;
+		$cfg->{"DONGLE2"}->{freq4} = $R::d2freq4;
+		$cfg->{"DONGLE2"}->{sample} = $R::d2sample;
+		$cfg->{"DONGLE2"}->{hop} = $R::d2hop;
 		
-		#$pcfg->param("DONGLE3.Serial", "$R::d3id1");
-		$pcfg->param("DONGLE3.freq1", "$R::d3freq1");
-		$pcfg->param("DONGLE3.freq2", "$R::d3freq2");
-		$pcfg->param("DONGLE3.freq3", "$R::d3freq3");
-		$pcfg->param("DONGLE3.freq4", "$R::d3freq4");
-		$pcfg->param("DONGLE3.sample", "$R::d3sample");
-		$pcfg->param("DONGLE3.hop", "$R::d3hop");
+		$cfg->{"DONGLE3"}->{Serial} = $R::d3id1;
+		$cfg->{"DONGLE3"}->{freq1} = $R::d3freq1;
+		$cfg->{"DONGLE3"}->{freq2} = $R::d3freq2;
+		$cfg->{"DONGLE3"}->{freq3} = $R::d3freq3;
+		$cfg->{"DONGLE3"}->{freq4} = $R::d3freq4;
+		$cfg->{"DONGLE3"}->{sample} = $R::d3sample;
+		$cfg->{"DONGLE3"}->{hop} = $R::d3hop;
 	}
 	
-	$pcfg->save() or &error;
-	
+	$jsonobj->write();
 	# Call saving to rtl_433
 	&rtl_433_form;
 		
@@ -364,7 +360,7 @@ sub inittemplate
 				global_vars => 1,
 				loop_context_vars => 1,
 				die_on_bad_params=> 0,
-				associate => $pcfg,
+				associate => $jsonobj,
 				%htmltemplate_options,
 				debug => 1,
 				);
@@ -424,24 +420,18 @@ sub rtl_433_form
 ########################################################################
 sub change_serial
 {
-	#$template->param( FORMNO => 'form' );
+	my $No;
+	
 	# Stop Service
 	system("sudo systemctl stop rtl_433-mqtt.service");
-	#LOGERR $No;
-	#LOGERR $SerialNo;
-	sleep (2);
+	sleep (1);
 	system("yes 2>/dev/null | rtl_eeprom -d".$No." -s00000".$SerialNo." > /dev/null 2>&1");
-	$pcfg->param("DONGLE1.Serial", "00000".$SerialNo);
-	#LOGERR $R::d1freq1;
-	#LOGERR $SerialNo;
-	#&form;
+	$cfg->{"DONGLE1"}->{Serial} = "00000".$SerialNo;
+	$jsonobj->write();
 	#my $file = qx(/usr/bin/php $lbpbindir/create_conf.php);
 	system("sudo systemctl start rtl_433-mqtt.service");
 	notify( $lbpplugindir, "Radioscanner", "Please restart LoxBerry or unplug/plugin the Dongle in order to apply the changed Serial No.");
 	printtemplate();
-	LOGERR $SerialNo;
-	# Start Service using newly created file
-	#&form;
 	return;
 
 }
