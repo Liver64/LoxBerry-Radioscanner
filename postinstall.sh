@@ -43,5 +43,10 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
+echo "<INFO> Start building usbreset"
+cd $PBIN
+gcc usbreset.c -o usbreset
+chmod +x usbreset
+
 # Exit with Status 0
 exit 0

@@ -6,6 +6,7 @@ require_once "loxberry_log.php";
 require_once "loxberry_io.php";
 require_once "phpMQTT/phpMQTT.php";
 
+
 $configfile	= "config.json";
 $rtl_433_configfile	= "rtl_433.conf";
 
@@ -18,6 +19,7 @@ if (file_exists($lbpconfigdir . "/" . $configfile))    {
 	echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 	exit;
 }
+
 #print_r($config);
 
 # Explore Protocols
@@ -77,7 +79,12 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 		$hopp = "1";
 	} 
 	if ($config['DONGLE1']['freq4'] != "0" and !empty($config['DONGLE1']['freq4']))  {
-		fwrite($file,"frequency ".$config['DONGLE1']['freq4']."M\r\n");
+		$len = strlen($config['DONGLE1']['freq4']);
+		if ($len === 9)   {
+			fwrite($file,"frequency ".$config['DONGLE1']['freq4']."\r\n");
+		} else {
+			fwrite($file,"frequency ".$config['DONGLE1']['freq4']."M\r\n");
+		}
 		$hopp = "1";
 	}
 	# If more then one frequence entered add hop interval
@@ -113,6 +120,4 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 	fwrite($file,"output log:".$lbplogdir."/rscan4lox.log\r\n");
 	fwrite($file,"stop_after_successful_events false\r\n");
 fclose($file);
-
-
 ?>

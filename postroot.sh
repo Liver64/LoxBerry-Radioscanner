@@ -47,8 +47,7 @@ PBIN=$LBPBIN/$PDIR
 
 echo "<INFO> Start building rtl-sdr"
 cd ~
-cd /usr/local
-mkdir rtl
+mkdir -p /usr/local/rtl
 cd /usr/local/rtl
 git clone git://git.osmocom.org/rtl-sdr.git
 cd /usr/local/rtl/rtl-sdr/ && mkdir build && cd build/
