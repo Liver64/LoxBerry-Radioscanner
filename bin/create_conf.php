@@ -6,19 +6,19 @@ require_once "loxberry_log.php";
 require_once "loxberry_io.php";
 require_once "phpMQTT/phpMQTT.php";
 
-$configfile	= "config.json";
+$configfile	= "config.cfg";
 $rtl_433_configfile	= "rtl_433.conf";
 
 echo "<PRE>";
 
 # load Plugin Configuration
 if (file_exists($lbpconfigdir . "/" . $configfile))    {
-	$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
+	$config = parse_ini_file($lbpconfigdir.'/'.$configfile, TRUE);
 } else {
 	echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 	exit;
 }
-#print_r($config);
+print_r($config);
 
 # Explore Protocols
 $prot = explode(':',$config['DONGLE1']['protocols']);
@@ -77,7 +77,12 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 		$hopp = "1";
 	} 
 	if ($config['DONGLE1']['freq4'] != "0" and !empty($config['DONGLE1']['freq4']))  {
-		fwrite($file,"frequency ".$config['DONGLE1']['freq4']."M\r\n");
+		$len = strlen($config['DONGLE1']['freq4']);
+		if ($len === 9)   {
+			fwrite($file,"frequency ".$config['DONGLE1']['freq4']."\r\n");
+		} else {
+			fwrite($file,"frequency ".$config['DONGLE1']['freq4']."M\r\n");
+		}
 		$hopp = "1";
 	}
 	# If more then one frequence entered add hop interval
@@ -103,12 +108,9 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 	#fwrite($file,"analyze_pulses false\r\n");
 	fwrite($file,"report_meta time:unix\r\n");
 	fwrite($file,"report_meta protocol\r\n");
-	fwrite($file,"report_meta noise\r\n");
-	fwrite($file,"report_meta level\r\n");
-	fwrite($file,"pulse_detect autolevel\r\n");
-	#fwrite($file,"signal_grabber none\r\n");
+	#fwrite($file,"pulse_detect auto\r\n");
 	# MQTT Credentials and output
-	fwrite($file,"output mqtt://".$creds['brokeraddress'].",user=".$creds['brokeruser'].",pass=".$creds['brokerpass'].",retain=0,devices=rtl_433[/protocol][/model][/id]\r\n");
+	fwrite($file,"output mqtt://".$creds['brokeraddress'].",user=".$creds['brokeruser'].",pass=".$creds['brokerpass'].",retain=0,devices=rtl_433[/protocol][/id]\r\n");
 	# path to Log file
 	fwrite($file,"output log:".$lbplogdir."/rscan4lox.log\r\n");
 	fwrite($file,"stop_after_successful_events false\r\n");
