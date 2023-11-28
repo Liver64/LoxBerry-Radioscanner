@@ -1,3 +1,2 @@
  ----------------------------------------------------------------------------------------------------------------------------
- 1.0.0		Initiales Release des Plugin (Stable Version)
- 
+ 1.0.0		Initiales Release des Plugin (Stable Version) 

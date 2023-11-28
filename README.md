@@ -14,7 +14,7 @@ Changelog
 A [Changelog](//github.com/Liver64/LoxBerry-Sonos/blob/master/changelog.txt) has been available since version 1.0.0
 
 
-Where to get help
+Where to get help?
 -----------------
 If you found a bug or got a question? Just not sure how something works?  
 Please [create an issue](//github.com/Liver64/LoxBerry-Radioscanner/issues) or post alternatively in [LoxForum](https://www.loxforum.com/forum/projektforen/loxberry/plugins/74862-loxberry-sonos-plugin-verf%C3%BCgbar)
