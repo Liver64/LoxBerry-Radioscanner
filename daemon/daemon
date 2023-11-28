@@ -11,8 +11,6 @@ then
 	# Restart if not
 	systemctl restart rtl_433-mqtt.service
 	sleep 5
-else
-	done
 fi
 
 exit 0

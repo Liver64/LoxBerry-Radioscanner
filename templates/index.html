@@ -16,7 +16,9 @@
 	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
+		<!-- activate if multi dongles are working-->
 		<input type="hidden" name="countdongles" id="countdongles" value=<TMPL_VAR DONGLE.count>>
+		
 		<div class="scanner" style="display:flex;align-items:center;justify-content:center;">
 			<span id="scanner"></span>&nbsp;
 		</div>	
@@ -122,7 +124,7 @@
 								<select id="d1freq3" name="d1freq3" data-mini="true" data-native-menu="false" width="2%">
 									<option value="0">-</option>'
 									<option value="433.92M">433.92M</option>
-									<option value="868,3M">868.3M</option>
+									<option value="868.3M">868.3M</option>
 									<option value="315M">315M</option>
 									<option value="345M">345M</option>
 									<option value="915M">915M</option>
@@ -140,7 +142,9 @@
 								<label id="lhop"><TMPL_VAR DONGLE.LHOP></label>
 							</td>
 							<td style="height: 48px; width: 8%">
-								<input id="d1hop" name="d1hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE1.hop>">
+								<input id="d1hop" name="d1hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE1.hop>"
+									data-validation-error-msg="<TMPL_VAR MESSAGE.HOPING>" 
+									data-validation-rule="^([0-9]){2,3}$"">
 							</td>
 							<td style="height: 48px; width: 8%">
 								<label id="lsample"><TMPL_VAR DONGLE.SAMPLING></label>
@@ -159,7 +163,7 @@
 							</tr>
                         </table>
 						
-						<!-- load Sensors-->
+						<!-- load Sensors D1-->
 						<tr>
 							<td width="25%"></td>
 								<td width="70%">
@@ -167,10 +171,7 @@
 										<h1><TMPL_VAR BASIS.PROTOCOLS></h1>
 											<fieldset data-role="controlgroup">
 												<TMPL_VAR SENSORS>
-												<!--<div id="dynamic_div_d1"></div>-->
-												
 											</fieldset>
-											
 									</div>
 									<font size="-1" color="blue"><TMPL_VAR BASIS.PROTOCOLS_NOTICE></font>
 								</td>
@@ -244,7 +245,9 @@
 								<label id="lhop"><TMPL_VAR DONGLE.LHOP></label>
 							</td>
 							<td style="height: 48px; width: 8%">
-								<input id="d2hop" name="d2hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE2.hop>">
+								<input id="d2hop" name="d2hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE2.hop>"
+									data-validation-error-msg="<TMPL_VAR MESSAGE.HOPING>" 
+									data-validation-rule="^([0-9]){2,3}$"">
 							</td>
 							<td style="height: 48px; width: 8%">
 								<label id="lsample"><TMPL_VAR DONGLE.SAMPLING></label>
@@ -262,6 +265,25 @@
 							</td>
 							</tr>
                         </table>
+						
+						<!-- load Sensors D2-->
+						<tr>
+							<td width="25%" ></td>
+								<td width="70%">
+									<div data-role="collapsible" class="serial-group-d2" >
+										<h1><TMPL_VAR BASIS.PROTOCOLS></h1>
+											<fieldset data-role="controlgroup">
+												<TMPL_VAR SENSORS2>
+												<!--<div id="dynamic_div_d1"></div>-->
+												
+											</fieldset>
+											
+									</div>
+									<!--<font size="-1" color="blue"><TMPL_VAR BASIS.PROTOCOLS_NOTICE></font>-->
+								</td>
+							<td width="5%"></td>
+							<td width="20%"></td>
+						</tr>
                 </tr>
 				</div>
 				<!-- Ende Dongle tables -->
@@ -312,13 +334,9 @@ function isNumeric(num){
 }
 
 function createSerial() {
-	// validate input
 	var newservalue = document.getElementById("didser").value;
 	var newserlength = document.getElementById("didser").value.length;
 	var newsernumeric = isNumeric(newservalue);
-	//console.log(newservalue);
-	//console.log(newserlength);
-	//console.log(isNumeric(newservalue));
 	$("#info").empty();
 	if (newserlength != "3")   {
 		$("#info").attr("style", "color:red");
@@ -360,15 +378,13 @@ function createSerial() {
 
 function layout() {
 	if (<TMPL_VAR DONGLE.count> > 1 ) {
-        $(".serial-group").hide();
+		$(".serial-group").show();
 		$(".serial-group-d2").show();
     } else {
-		
-		$(".serial-group").show();
+		$(".serial-group").hide();		
 		$(".serial-group-d2").hide();
     }
 }
-
 
 
 $(document).ready( function ()  {
@@ -377,15 +393,10 @@ $(document).ready( function ()  {
 		});	
 		setInterval(function(){ update_pids(); }, 5000);
 		update_pids();
+
+		validate_enable('#d1hop');
+        validate_chk_object(['#d1hop']);
 		
-		//var newser = document.getElementById("didser").value;
-		//var newser1 = document.getElementById("didser").value.length;
-		//console.log(newser);
-		//console.log(newser1);
-		//if (document.getElementById("didser").value)   {
-			//validate_enable('#didser');
-			//validate_chk_object(['#didser']);
-		//}
 })
 	
 
