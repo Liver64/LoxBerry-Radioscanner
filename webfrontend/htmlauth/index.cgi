@@ -27,6 +27,7 @@ use LoxBerry::IO;
 use LoxBerry::JSON;
 use warnings;
 #use strict;
+use diagnostics;
 use Data::Dumper;
 
 ##########################################################################
@@ -136,7 +137,7 @@ if($log->loglevel() eq "7") {
 $template->param("PLUGINDIR" => $lbpplugindir);
 $template->param("CONFIGDIR" => $lbpconfigdir);
 
-#LOGSTART "Radioscanner started";
+LOGSTART "Radioscanner";
 
 
 ##########################################################################
@@ -170,30 +171,36 @@ our $list;
 my $dongle_list;
 my $counter;
 my $file = '/tmp/final_dongles.txt';
-
+my @list;
+ 
 my $fileexe = qx(/usr/bin/php $lbpbindir/get_dongles.php);
 my $json = LoxBerry::JSON->new();
 $list = $json->open(filename => $file, readonly => 1);
-foreach my $key (keys %$list) {
-	$counter++;
-	my $countd = $counter -1;
-	$dongle_list .= '<b>#<font color="blue">'.$countd .'</font></b>: '. $list->{$key} .' Serial: <b><font color="blue">'. $key. '</font></b><br>';
-	$cfg->{"DONGLE".$counter}->{Serial} = $key;
-	$cfg->{"DONGLE".$counter}->{Number} = $countd;
-	$jsonobj->write();
-}
 
-# count dongles and push to Template
-$count = %$list;
-if ($count < 1)  {
-	$dongle_list = "****** No RTL-SDR compatible DVB-T Dongles detected ******";
-} else {
+if (ref($list) eq "HASH") {
+	$count = scalar(%list);
+    foreach my $key (keys %$list) {
+		$counter++;
+		my $countd = $counter -1;
+		$dongle_list .= '<b>#<font color="blue">'.$countd .'</font></b>: '. $list->{$key} .' Serial: <b><font color="blue">'. $key. '</font></b><br>';
+		$cfg->{"DONGLE".$counter}->{Serial} = $key;
+		$cfg->{"DONGLE".$counter}->{Number} = $countd;
+		$jsonobj->write();
+	}
+	# count dongles and push to Template
+	$count = %$list;
 	$count =~ s/(\r?\n|\r\n?)+$//;
 	$cfg->{"DONGLE"}->{count} = $count;
 	$jsonobj->write();
+	$template->param("USB_LIST", $dongle_list);
+} else {
+    $dongle_list = "****** No RTL-SDR compatible DVB-T Dongles detected ******";
+	# count dongles and push to Template
+	$template->param("USB_LIST", $dongle_list);
+	$count = 1;
+	$cfg->{"DONGLE"}->{count} = $count;
+	$jsonobj->write();
 }
-$template->param("USB_LIST", $dongle_list);
-
 	
 # create array of Sensors/Protocols
 my $rowprotocols;
