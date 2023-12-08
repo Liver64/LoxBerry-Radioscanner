@@ -46,35 +46,37 @@ PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
 echo "<INFO> Start building rtl-sdr"
-cd ~
 mkdir -p /usr/local/rtl
 cd /usr/local/rtl
 git clone git://git.osmocom.org/rtl-sdr.git
 cd /usr/local/rtl/rtl-sdr/ && mkdir build && cd build/
 cmake ../ -DINSTALL_UDEV_RULES=ON
-sudo make
-sudo make install
-sudo cp REPLACELBPBINDIR/rtl-sdr.rules /etc/udev/rules.d/
-sudo ldconfig
+make
+make install
+cp $PBIN/rtl-sdr.rules /etc/udev/rules.d/
+ldconfig
 
-cp REPLACELBPCONFIGDIR/examples/no-rtl.conf /etc/modprobe.d/no-rtl.conf
+cp $PCONFIG/examples/no-rtl.conf /etc/modprobe.d/no-rtl.conf
 echo "<OK> Blacklist file has been copied to /etc/modprobe.d/no-rtl.conf"
 
 echo "<INFO> Start building rtl_433"
-cd ~
 cd /usr/local/rtl
 git clone https://github.com/merbanan/rtl_433.git
-cd /usr/local/rtl/rtl_433/ && mkdir build/
+cd /usr/local/rtl/rtl_433/ && mkdir -p build
 cd build && cmake ../
 make
-sudo make install
+make install
 
-cp REPLACELBPCONFIGDIR/examples/rtl_433-mqtt.service /etc/systemd/system/rtl_433-mqtt.service
+cp $PCONFIG/examples/rtl_433-mqtt.service /etc/systemd/system/rtl_433-mqtt.service
 echo "<OK> Service file 'rtl_433-mqtt.service' has been copied to /etc/systemd/system/"
 
 echo "<INFO> rtl_433 will be configured to start as Service"
 sudo systemctl enable rtl_433-mqtt
 sudo systemctl start rtl_433-mqtt
+
+echo "<INFO> Creating symlink for rascanner"
+rm /usr/local/bin/rascanner
+ln -s $PBIN/rascanner.sh /usr/local/bin/rascanner
 
 # Exit with Status 0
 exit 0
