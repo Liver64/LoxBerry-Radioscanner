@@ -244,7 +244,7 @@ if(!defined $R::do or $R::do eq "form") {
 	LOGTITLE "Scanner";
 	$navbar{2}{active} = 1;
 	$template->param("SCANNER", "1");
-	if ( begins_with("3",  LoxBerry::System::lbversion() ) {
+	if ( begins_with(LoxBerry::System::lbversion(), '3' ) ) {
 		$template->param("LB3", "1");
 	}
 	printtemplate();

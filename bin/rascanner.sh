@@ -12,6 +12,8 @@ exit_script() {
 
 trap exit_script SIGINT SIGTERM
 
+echo -e "\n\nTo exit, hit <STRG>+C";
+
 if systemctl --no-pager status rtl_433-mqtt.service > /dev/null 2>&1; then
 	echo -e "\nStopping MQTT Service and starting scanner...\n"
 	sudo systemctl stop rtl_433-mqtt.service > /dev/null 2>&1
