@@ -465,3 +465,22 @@ $(document).ready( function ()  {
         </table>
     </center>
 </TMPL_IF>
+
+<TMPL_IF SCANNER>
+  <p>
+  <center>
+  <TMPL_VAR BASIS.SCANNER_NOTICE>
+  </center>
+  </p>
+  <TMPL_IF LB3>
+    <p>
+    <center>
+    <a href="/admin/system/tools/terminal/" target="_blank">
+    <div class="menutableicon" style="width:100%; height:120px; padding:0px; background-image: url('/system/images/icons/main_terminal.svg');  background-repeat: no-repeat; background-position: center center;">
+    </div>
+    <TMPL_VAR BASIS.SCANNER_LINK>
+    </center>
+    </a>
+    </p>
+    </TMPL_IF>
+</TMPL_IF>
