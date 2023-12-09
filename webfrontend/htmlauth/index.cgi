@@ -214,6 +214,8 @@ my @array = @{[ @$list ]};
 # Create Navbars
 $navbar{1}{Name} = "$L{'BASIS.MENU_SETTINGS'}";
 $navbar{1}{URL} = './index.cgi';
+$navbar{2}{Name} = "$L{'BASIS.MENU_SCANNER'}";
+$navbar{2}{URL} = './index.cgi?do=scanner';
 $navbar{99}{Name} = "$L{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
 
@@ -237,6 +239,14 @@ if(!defined $R::do or $R::do eq "form") {
 	$navbar{99}{active} = 1;
 	$template->param("LOGFILES", "1");
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
+	printtemplate();
+} elsif ($R::do eq "scanner") {
+	LOGTITLE "Scanner";
+	$navbar{2}{active} = 1;
+	$template->param("SCANNER", "1");
+	if ( begins_with(LoxBerry::System::lbversion(), '3' ) ) {
+		$template->param("LB3", "1");
+	}
 	printtemplate();
 }
 
