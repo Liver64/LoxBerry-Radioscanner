@@ -234,6 +234,11 @@ if(!defined $R::do or $R::do eq "form") {
 	$navbar{1}{active} = 1;
 	$template->param("FORM", "1");
 	&form;
+} elsif ($R::do eq "restart") {
+	$template->param("FORM", "1");
+	system("sudo systemctl restart rtl_433-mqtt.service");
+	LOGINF "Scanner Service restarted";
+	printtemplate();
 } elsif ($R::do eq "logfiles") {
 	LOGTITLE "Show logfiles";
 	$navbar{99}{active} = 1;

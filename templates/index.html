@@ -291,7 +291,8 @@
             <p>
                 <center>
 					<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>
-                    <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+					<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+					<a id="btnrestart" data-role="button" data-inline="true" data-mini="true" data-icon="refresh" >Restart Service</a>
 				</center>
             </p>
         </div>
@@ -328,6 +329,31 @@ function update_pids() {
 		console.log( "ajax_post", "error", resp );
 	});
 }
+
+// Restart Scanner
+$(function() {
+
+$("#btnrestart").click(function(){
+		console.log("Restart pressed");
+		$("#btnrestart").attr("disabled", true);
+		$.post( 'index.cgi', {
+		ajax: 'restart' })
+		
+		.done(function(resp) {
+			console.log( "ajax_post", "success", resp );
+	  })
+	  .fail(function(resp) {
+			console.log( "ajax_post", "failed", resp );
+	  })
+	  .always(function(resp) {
+			console.log( "ajax_post", "finished", resp );
+		$("#btnrestart").attr("disabled", false);
+		update_pids();
+		url = './index.cgi?do=restart';
+		document.location.href = url;	
+	  });
+	});
+});
 
 function isNumeric(num){
   return !isNaN(num);
