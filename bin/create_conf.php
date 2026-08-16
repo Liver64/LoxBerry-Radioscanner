@@ -4,7 +4,6 @@
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "loxberry_io.php";
-require_once "phpMQTT/phpMQTT.php";
 
 
 $configfile	= "config.json";
@@ -15,25 +14,32 @@ echo "<PRE>";
 # load Plugin Configuration
 if (file_exists($lbpconfigdir . "/" . $configfile))    {
 	$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
+	if (!is_array($config) || !isset($config['DONGLE1'])) {
+		echo "The configuration file is invalid or incomplete. We have to abort.".PHP_EOL;
+		exit(1);
+	}
+	foreach (array('Serial', 'freq1', 'sample') as $required) {
+		if (!isset($config['DONGLE1'][$required]) || trim((string)$config['DONGLE1'][$required]) === '') {
+			echo "The configuration is incomplete (missing ".$required."). We have to abort.".PHP_EOL;
+			exit(1);
+		}
+	}
 } else {
 	echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
-	exit;
+	exit(1);
 }
 
 #print_r($config);
 
 # Explore Protocols
-$prot = explode(':',$config['DONGLE1']['protocols']);
+$prot = explode(':', (string)($config['DONGLE1']['protocols'] ?? ''));
+$hopp = "0";
 # check if entries exists;
 $containsEmpty = in_array("", $prot);
 
 # load MQTT Details
 $creds = mqtt_connectiondetails();
 
-// MQTT requires a unique client id
-$client_id = uniqid(gethostname()."_client");
-$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
-$mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass']);
 #print_r($creds);
 
 $heute = date("d.m.Y"); 
@@ -46,6 +52,10 @@ $level = LBSystem::pluginloglevel();
 # Start writing rtl_433 config file
 ###########################################################
 $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
+	if ($file === false) {
+		echo "The rtl_433 configuration file could not be created.".PHP_EOL;
+		exit(1);
+	}
 	fwrite($file,"# config for rtl_433\r\n");
 	fwrite($file,"# created on ".$heute." at ".$time."h\r\n");
 	fwrite($file,"\r\n");
@@ -70,15 +80,15 @@ $file = fopen("$lbpconfigdir/$rtl_433_configfile","w",1);
 	fwrite($file,"device :".trim($config['DONGLE1']['Serial']??'')."\r\n");
 	fwrite($file,"frequency ".$config['DONGLE1']['freq1']."\r\n");
 	# Check for other Frequences entered
-	if ($config['DONGLE1']['freq2'] != "0")  {
+	if (($config['DONGLE1']['freq2'] ?? "0") != "0")  {
 		fwrite($file,"frequency ".$config['DONGLE1']['freq2']."\r\n");
 		$hopp = "1";
 	} 
-	if ($config['DONGLE1']['freq3'] != "0")  {
+	if (($config['DONGLE1']['freq3'] ?? "0") != "0")  {
 		fwrite($file,"frequency ".$config['DONGLE1']['freq3']."\r\n");
 		$hopp = "1";
 	} 
-	if ($config['DONGLE1']['freq4'] != "0" and !empty($config['DONGLE1']['freq4']))  {
+	if (($config['DONGLE1']['freq4'] ?? "0") != "0" and !empty($config['DONGLE1']['freq4']))  {
 		$len = strlen($config['DONGLE1']['freq4']);
 		if ($len === 9)   {
 			fwrite($file,"frequency ".$config['DONGLE1']['freq4']."\r\n");

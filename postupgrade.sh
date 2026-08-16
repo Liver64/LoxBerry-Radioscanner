@@ -1,14 +1,33 @@
 #!/bin/bash
 
-ARGV0=$0 # Zero argument is shell command
-ARGV1=$1 # First argument is temp folder during install
-ARGV2=$2 # Second argument is Plugin-Name for scipts etc.
-ARGV3=$3 # Third argument is Plugin installation folder
-ARGV4=$4 # Forth argument is Plugin version
-ARGV5=$5 # Fifth argument is Base folder of LoxBerry
+# Restore the plugin configuration preserved by preupgrade.sh.
+# Exit codes: 0 = success, 1 = warning, 2 = cancel installation.
 
-echo "<INFO> Copy back existing config files"
-cp -p -v -r /tmp/$ARGV1\_upgrade/config/$ARGV3/* $ARGV5/config/plugins/$ARGV3/
+ARGV0=$0
+ARGV1=$1
+ARGV2=$2
+ARGV3=$3
+ARGV4=$4
+ARGV5=$5
 
-# Exit with Status 0
+BASEFOLDER=${LBHOMEDIR:-$ARGV5}
+BACKUPROOT="/tmp/${ARGV1}_upgrade"
+BACKUPDIR="$BACKUPROOT/config/${ARGV3}"
+TARGETDIR="$BASEFOLDER/config/plugins/$ARGV3"
+
+if [ -d "$BACKUPDIR" ]; then
+    echo "<INFO> Copy back existing config files"
+    mkdir -p "$TARGETDIR" || {
+        echo "<ERROR> Could not create plugin configuration directory."
+        exit 2
+    }
+    cp -a "$BACKUPDIR/." "$TARGETDIR/" || {
+        echo "<ERROR> Restoring existing plugin configuration failed."
+        exit 2
+    }
+else
+    echo "<WARNING> No upgrade configuration backup found; nothing to restore."
+fi
+
+rm -rf "$BACKUPROOT"
 exit 0

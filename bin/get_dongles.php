@@ -22,6 +22,14 @@ $vidpid = array(0 => '0bda:2838',
 				17 => '1b80:d39d'
 				);
 
+
+# Always start with clean temporary files. Previous interrupted runs must not
+# contaminate the current hardware detection.
+file_put_contents('/tmp/dvb-dongle_full.txt', '');
+file_put_contents('/tmp/dvb-dongle.txt', '');
+file_put_contents('/tmp/test.txt', '');
+file_put_contents('/tmp/final_dongles.txt', '[]', LOCK_EX);
+
 # get full lsusb
 system("lsusb >/tmp/dvb-dongle_full.txt");
 # filter Dongels by VIDPID array for RTL supported
@@ -46,14 +54,21 @@ $file = file_get_contents('/tmp/test.txt');
 $words = preg_split("#\r?\n#", $file, -1, PREG_SPLIT_NO_EMPTY);
 $serial = array();
 foreach ($words as $key)    {
-	preg_match('/[0-9]{6,8}/',$key, $matches);
-	array_push($serial,$matches[0]);
+	if (preg_match('/[0-9]{6,8}/', $key, $matches) === 1) {
+		array_push($serial, $matches[0]);
+	}
 }
 #print_r($serial);
 
-$final = array();
-$combine = array_combine($serial, $dongles);
-file_put_contents('/tmp/final_dongles.txt', json_encode($combine, JSON_PRETTY_PRINT));
+# array_combine throws on mismatched array sizes on current PHP versions.
+# Only pair entries we can identify reliably; an empty/no-device result is
+# represented by an empty JSON object instead of a PHP fatal error.
+$combine = array();
+$pairCount = min(count($serial), count($dongles));
+for ($i = 0; $i < $pairCount; $i++) {
+	$combine[$serial[$i]] = $dongles[$i];
+}
+file_put_contents('/tmp/final_dongles.txt', json_encode($combine, JSON_PRETTY_PRINT), LOCK_EX);
 
 unlink("/tmp/test.txt");
 unlink("/tmp/dvb-dongle_full.txt");

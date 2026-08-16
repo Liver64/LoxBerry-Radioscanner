@@ -2,7 +2,6 @@
 # One line per package, use exact packagename as you would do for apt-get.
 #
 git
-git-core
 cmake
 libusb-1.0-0-dev
 build-essential
@@ -10,3 +9,5 @@ libtool
 librtlsdr-dev
 pkg-config
 doxygen
+usbutils
+jq

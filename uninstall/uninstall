@@ -3,12 +3,12 @@
 # Bashscript which is executed by bash when uninstalling the plugin
 # Use with caution and remember, that all systems may be different!
 #
-# Exit code must be 0 if executed successfull. 
+# Exit code must be 0 if executed successfull.
 # Exit code 1 gives a warning but continues deinstallation.
 #
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Will be executed as user "root".
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 # You can use all vars from /etc/environment in this script.
 #
@@ -18,16 +18,16 @@
 # For logging, print to STDOUT. You can use the following tags for showing
 # different colorized information during plugin installation:
 #
-# <OK> This was ok!"
-# <INFO> This is just for your information."
-# <WARNING> This is a warning!"
-# <ERROR> This is an error!"
-# <FAIL> This is a fail!"
+# <OK> This was ok!
+# <INFO> This is just for your information.
+# <WARNING> This is a warning!
+# <ERROR> This is an error!
+# <FAIL> This is a fail!
 
 # To use important variables from command line use the following code:
 COMMAND=$0    # Zero argument is shell command
 PTEMPDIR=$1   # First argument is temp folder during install
-PSHNAME=$2    # Second argument is Plugin-Name for scipts etc.
+PSHNAME=$2    # Second argument is Plugin-Name for scripts etc.
 PDIR=$3       # Third argument is Plugin installation folder
 PVERSION=$4   # Forth argument is Plugin version
 #LBHOMEDIR=$5 # Comes from /etc/environment now. Fifth argument is
@@ -43,17 +43,185 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-sudo systemctl stop rtl_433-mqtt.service
-sudo systemctl disable rtl_433-mqtt.service
-sudo apt-get purge --auto-remove rtl-sdr 
-sudo apt-get purge --auto-remove rtl_433
-rm -r /usr/local/rtl/rtl-sdr
-rm -r /usr/local/rtl/rtl_433
-rm /usr/local/rtl/*
-rm -r /usr/local/rtl
-rm /etc/modprobe.d/no-rtl.conf
-rm /etc/systemd/system/rtl_433-mqtt.service
-rm /etc/udev/rules.d/rtl-sdr.rules
+RTL_BASE=/usr/local/rtl
+RTL_SDR_DIR=$RTL_BASE/rtl-sdr
+RTL_433_DIR=$RTL_BASE/rtl_433
+RTL_MANIFEST_DIR=$RTL_BASE/install-manifests
+RTL_SDR_SAVED_MANIFEST=$RTL_MANIFEST_DIR/rtl-sdr.txt
+RTL_433_SAVED_MANIFEST=$RTL_MANIFEST_DIR/rtl_433.txt
+RTL_SDR_BUILD_MANIFEST=$RTL_SDR_DIR/build/install_manifest.txt
+RTL_433_BUILD_MANIFEST=$RTL_433_DIR/build/install_manifest.txt
+
+# Remove exactly the files CMake installed. CMake's install_manifest.txt is
+# created by "make install" and therefore is the safest source of truth.
+# Only /usr/local and /etc paths are accepted from a manifest as an
+# additional safety guard against a corrupt/unexpected manifest file.
+remove_manifest_files()
+{
+    manifest="$1"
+    component="$2"
+
+    if [ ! -s "$manifest" ]; then
+        echo "<WARNING> No install manifest found for $component: $manifest"
+        return 1
+    fi
+
+    removed=0
+    skipped=0
+
+    while IFS= read -r installed_path || [ -n "$installed_path" ]; do
+        # Strip a possible CR from files created/read on mixed platforms.
+        installed_path=${installed_path%$'\r'}
+        [ -z "$installed_path" ] && continue
+
+        case "$installed_path" in
+            /usr/local/*|/etc/*)
+                if [ -L "$installed_path" ] || [ -f "$installed_path" ]; then
+                    rm -f -- "$installed_path" && removed=$((removed + 1))
+                elif [ -d "$installed_path" ]; then
+                    # CMake manifests normally contain files. If a directory
+                    # is listed, remove it only when it is empty.
+                    rmdir -- "$installed_path" 2>/dev/null && removed=$((removed + 1))
+                fi
+                ;;
+            *)
+                echo "<WARNING> Skipping unexpected path from $component manifest: $installed_path"
+                skipped=$((skipped + 1))
+                ;;
+        esac
+    done < "$manifest"
+
+    echo "<OK> Removed $removed installed file(s) for $component using CMake manifest."
+    if [ "$skipped" -gt 0 ]; then
+        echo "<WARNING> Skipped $skipped unexpected manifest path(s) for $component."
+    fi
+    return 0
+}
+
+# Fallback cleanup for installations where the build directory or manifest
+# was removed manually. These are the known /usr/local artifacts installed
+# by rtl-sdr/rtl_433. Debian package files live below /usr, not /usr/local,
+# and are deliberately not touched here.
+remove_rtlsdr_fallback()
+{
+    echo "<INFO> Using rtl-sdr fallback cleanup."
+
+    rm -f \
+        /usr/local/bin/rtl_adsb \
+        /usr/local/bin/rtl_biast \
+        /usr/local/bin/rtl_eeprom \
+        /usr/local/bin/rtl_fm \
+        /usr/local/bin/rtl_ir \
+        /usr/local/bin/rtl_power \
+        /usr/local/bin/rtl_power_fftw \
+        /usr/local/bin/rtl_sdr \
+        /usr/local/bin/rtl_tcp \
+        /usr/local/bin/rtl_test
+
+    rm -f \
+        /usr/local/include/rtl-sdr.h \
+        /usr/local/include/rtl-sdr_export.h \
+        /usr/local/lib/librtlsdr.a \
+        /usr/local/lib/librtlsdr.so \
+        /usr/local/lib/librtlsdr.so.* \
+        /usr/local/lib/pkgconfig/librtlsdr.pc
+
+    rm -rf /usr/local/lib/cmake/rtlsdr
+
+    rm -f \
+        /usr/local/share/man/man1/rtl_adsb.1 \
+        /usr/local/share/man/man1/rtl_biast.1 \
+        /usr/local/share/man/man1/rtl_eeprom.1 \
+        /usr/local/share/man/man1/rtl_fm.1 \
+        /usr/local/share/man/man1/rtl_power.1 \
+        /usr/local/share/man/man1/rtl_sdr.1 \
+        /usr/local/share/man/man1/rtl_tcp.1 \
+        /usr/local/share/man/man1/rtl_test.1
+}
+
+remove_rtl433_fallback()
+{
+    echo "<INFO> Using rtl_433 fallback cleanup."
+
+    rm -f \
+        /usr/local/bin/rtl_433 \
+        /usr/local/include/rtl_433.h \
+        /usr/local/include/rtl_433_devices.h \
+        /usr/local/share/man/man1/rtl_433.1
+
+    # If the source tree still exists, remove only configuration examples
+    # whose filenames came from that source tree. Preserve any unrelated
+    # files a user may have added to /usr/local/etc/rtl_433.
+    if [ -d "$RTL_433_DIR/conf" ]; then
+        for source_conf in "$RTL_433_DIR"/conf/*.conf; do
+            [ -f "$source_conf" ] || continue
+            rm -f -- "/usr/local/etc/rtl_433/$(basename "$source_conf")"
+        done
+    fi
+    rmdir /usr/local/etc/rtl_433 2>/dev/null || true
+}
+
+
+echo "<INFO> Stopping RadioScanner service."
+systemctl stop rtl_433-mqtt.service 2>/dev/null || true
+systemctl disable rtl_433-mqtt.service 2>/dev/null || true
+
+# Remove source-installed components before deleting their build trees.
+# Prefer the cumulative manifest saved by postroot.sh, but also process the
+# current build manifest when available. Processing both is harmless and
+# covers legacy installations upgraded to this version.
+rtl433_manifest_found=0
+if remove_manifest_files "$RTL_433_SAVED_MANIFEST" "rtl_433 (saved manifest)"; then
+    rtl433_manifest_found=1
+fi
+if remove_manifest_files "$RTL_433_BUILD_MANIFEST" "rtl_433 (build manifest)"; then
+    rtl433_manifest_found=1
+fi
+if [ "$rtl433_manifest_found" -eq 0 ]; then
+    remove_rtl433_fallback
+fi
+
+rtlsdr_manifest_found=0
+if remove_manifest_files "$RTL_SDR_SAVED_MANIFEST" "rtl-sdr (saved manifest)"; then
+    rtlsdr_manifest_found=1
+fi
+if remove_manifest_files "$RTL_SDR_BUILD_MANIFEST" "rtl-sdr (build manifest)"; then
+    rtlsdr_manifest_found=1
+fi
+if [ "$rtlsdr_manifest_found" -eq 0 ]; then
+    remove_rtlsdr_fallback
+fi
+
+# RadioScanner-specific files created/copied by postroot.sh.
+echo "<INFO> Removing RadioScanner system integration files."
+rm -f /usr/local/bin/rascanner
+rm -f /etc/systemd/system/rtl_433-mqtt.service
+rm -f /etc/modprobe.d/no-rtl.conf
+rm -f /etc/udev/rules.d/rtl-sdr.rules
+
+# Remove only our two source trees. Remove /usr/local/rtl itself only when it
+# is empty, so unrelated user content below /usr/local/rtl is preserved.
+rm -rf "$RTL_SDR_DIR" "$RTL_433_DIR"
+rm -rf "$RTL_MANIFEST_DIR"
+rmdir "$RTL_BASE" 2>/dev/null || true
+
+# Tell systemd, udev and the dynamic linker about the removed files.
+systemctl daemon-reload 2>/dev/null || true
+systemctl reset-failed rtl_433-mqtt.service 2>/dev/null || true
+
+if command -v udevadm >/dev/null 2>&1; then
+    udevadm control --reload-rules 2>/dev/null || true
+fi
+
+if command -v ldconfig >/dev/null 2>&1; then
+    ldconfig
+fi
+
+# Do NOT purge rtl-sdr/rtl_433 Debian packages here. The plugin builds its own
+# copies from source under /usr/local. Purging apt packages could remove a
+# package the user installed independently of RadioScanner.
+
+echo "<OK> RadioScanner system components removed."
 
 # Exit with Status 0
 exit 0

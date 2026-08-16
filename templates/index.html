@@ -17,7 +17,7 @@
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<!-- activate if multi dongles are working-->
-		<input type="hidden" name="countdongles" id="countdongles" value=<TMPL_VAR DONGLE.count>>
+			<input type="hidden" name="countdongles" id="countdongles" value="<TMPL_VAR DONGLE.count>">
 		
 		<div class="scanner" style="display:flex;align-items:center;justify-content:center;">
 			<span id="scanner"></span>&nbsp;
@@ -51,19 +51,19 @@
 						</div>
 					</td>
 				</tr>
-			<div class="serial-group" data-role="collapsible">	
-				<tr>
+				<tr class="serial-group">
 					<td class="serial-group" style="height: 41px; width: 20%;">
 					</td>
 					<td class="serial-group" valign="left" style="height: 41px; width: 100%;">
-						<table class="serial-group" style="width=100%" cellpadding="2" cellspacing="0" border-radius="5px"; id="tblserial" name="tblserial">
+						<table class="serial-group" style="width: 100%; border-radius: 5px;" cellpadding="2" cellspacing="0" id="tblserial" name="tblserial">
+							<tr>
 							<td style="height: 41px; width: 25%;">
 								<label valign="left" id="lsn"><TMPL_VAR HW.CARD_NO></label>
 							</td>
 							<td valign="left" style="height: 41px; width: 5%;">
 								<input valign="left" id="did" name="did" type="text" class="textfield" value="" placeholder="0"
 									data-validation-error-msg="Bitte korrigieren" 
-									data-validation-rule="^([0-9]){1}$"">
+									data-validation-rule="^([0-9]){1}$">
 							</td>
 							<td valign="left" style="height: 41px; width: 11%;">
 								<input valign="left" placeholder="<TMPL_VAR DONGLE.PL_SER>" id="didser" name="didser" type="text" class="textfield" value="">
@@ -74,10 +74,10 @@
 							</td>
 							<td id="info" name="info" style="width: 44%; height: 41px;">
 							</td>
+							</tr>
 						</table>
 					</td>
 				</tr>
-			</div>
 				
 				<!-- Dongle table -->
 				<tr>
@@ -85,7 +85,8 @@
 						<label id="lusb1" style="font-weight:bold"><TMPL_VAR HW.DONGLE1></label>
 					</td>
                     <td valign="middle" style="height: 41px; width: 20%;">
-                        <table style="border: 2px solid #000000; border-radius: 8px; width="100%" cellpadding="2" cellspacing="0" id="tbldongle1" name="tbldongle1">
+                        <table style="border: 2px solid #000000; border-radius: 8px; width: 100%;" cellpadding="2" cellspacing="0" id="tbldongle1" name="tbldongle1">
+								<tr>
 							<td style="height: 48px; width: 8%">
 								<label id="lid"><TMPL_VAR DONGLE.ID></label>
 							</td>
@@ -104,12 +105,12 @@
 									<option value="915M">915M</option>
 								</select>
 								<script>
-									$('#d1freq1 option[value="<TMPL_VAR DONGLE1.freq1>"').prop('selected', 'selected');
+									$('#d1freq1 option[value="<TMPL_VAR DONGLE1.freq1>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							<td style="width: 2%; height: 48px">
 								<select id="d1freq2" name="d1freq2" data-mini="true" data-native-menu="false" width="2%">
-									<option value="0">-</option>'
+									<option value="0">-</option>
 									<option value="433.92M">433.92M</option>
 									<option value="868.3M">868.3M</option>
 									<option value="315M">315M</option>
@@ -117,12 +118,12 @@
 									<option value="915M">915M</option>
 								</select>
 								<script>
-									$('#d1freq2 option[value="<TMPL_VAR DONGLE1.freq2>"').prop('selected', 'selected');
+									$('#d1freq2 option[value="<TMPL_VAR DONGLE1.freq2>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							<td style="width: 2%; height: 48px">
 								<select id="d1freq3" name="d1freq3" data-mini="true" data-native-menu="false" width="2%">
-									<option value="0">-</option>'
+									<option value="0">-</option>
 									<option value="433.92M">433.92M</option>
 									<option value="868.3M">868.3M</option>
 									<option value="315M">315M</option>
@@ -130,13 +131,14 @@
 									<option value="915M">915M</option>
 								</select>
 								<script>
-									$('#d1freq3 option[value="<TMPL_VAR DONGLE1.freq3>"').prop('selected', 'selected');
+									$('#d1freq3 option[value="<TMPL_VAR DONGLE1.freq3>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							<td style="width: 4%; height: 48px">
 								<input id="d1freq4" name="d1freq4" type="text" class="textfield" placeholder= "411.26" value="<TMPL_VAR DONGLE1.freq4>">
 							</td>
 							
+								</tr>
 							<tr>
 							<td style="height: 48px; width: 7%">
 								<label id="lhop"><TMPL_VAR DONGLE.LHOP></label>
@@ -144,7 +146,7 @@
 							<td style="height: 48px; width: 8%">
 								<input id="d1hop" name="d1hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE1.hop>"
 									data-validation-error-msg="<TMPL_VAR MESSAGE.HOPING>" 
-									data-validation-rule="^([0-9]){2,3}$"">
+									data-validation-rule="^([0-9]){2,3}$">
 							</td>
 							<td style="height: 48px; width: 8%">
 								<label id="lsample"><TMPL_VAR DONGLE.SAMPLING></label>
@@ -157,11 +159,13 @@
 									<option value="3200k">3200k</option>
 								</select>
 								<script>
-									$('#d1sample option[value="<TMPL_VAR DONGLE1.sample>"').prop('selected', 'selected');
+									$('#d1sample option[value="<TMPL_VAR DONGLE1.sample>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							</tr>
                         </table>
+						</td>
+					</tr>
 						
 						<!-- load Sensors D1-->
 						<tr>
@@ -179,24 +183,24 @@
 							<td width="20%"></td>
 						</tr>
 						
-                </tr>
 				
 				<!-- Dongle #2-->
-				<div class="serial-group-d2" data-role="collapsible">>	
-				<tr>
+				
+				<tr class="serial-group-d2">
 					<td class="serial-group-d2" style="height: 133px; width: 10%;">
 						<label class="serial-group-d2" id="lusb2" style="font-weight:bold"><TMPL_VAR HW.DONGLE2></label>
 					</td>
                     <td class="serial-group-d2" valign="middle" style="height: 41px; width: 20%;">
-                        <table class="serial-group-d2" style="border: 2px solid #000000; border-radius: 8px; width="100%" cellpadding="2" cellspacing="0" id="tbldongle2" name="tbldongle2">
+                        <table class="serial-group-d2" style="border: 2px solid #000000; border-radius: 8px; width: 100%;" cellpadding="2" cellspacing="0" id="tbldongle2" name="tbldongle2">
+								<tr>
 							<td style="height: 48px; width: 8%">
-								<label id="lid"><TMPL_VAR DONGLE.ID></label>
+								<label id="lid2"><TMPL_VAR DONGLE.ID></label>
 							</td>
 							<td style="width: 8%; height: 48px">
 								<input disabled style="background-color: #e6e6e6;" id="d2id1" name="d2id1" type="text" class="textfield" placeholder= "Serial" value="<TMPL_VAR DONGLE2.Serial>">
 							</td>
 							<td style="height: 48px; width: 2%">
-								<label id="ldongle"><TMPL_VAR DONGLE.LFREQ></label>
+								<label id="ldongle2"><TMPL_VAR DONGLE.LFREQ></label>
 							</td>
 							<td style="width: 2%; height: 48px">
 								<select id="d2freq1" name="d2freq1" data-mini="true" data-native-menu="false" width="2%">
@@ -207,12 +211,12 @@
 									<option value="915M">915M</option>
 								</select>
 								<script>
-									$('#d2freq1 option[value="<TMPL_VAR DONGLE2.freq1>"').prop('selected', 'selected');
+									$('#d2freq1 option[value="<TMPL_VAR DONGLE2.freq1>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							<td style="width: 2%; height: 48px">
 								<select id="d2freq2" name="d2freq2" data-mini="true" data-native-menu="false" width="2%">
-									<option value="0">-</option>'
+									<option value="0">-</option>
 									<option value="433.92M">433.92M</option>
 									<option value="868.3M">868.3M</option>
 									<option value="315M">315M</option>
@@ -220,12 +224,12 @@
 									<option value="915M">915M</option>
 								</select>
 								<script>
-									$('#d2freq2 option[value="<TMPL_VAR DONGLE2.freq2>"').prop('selected', 'selected');
+									$('#d2freq2 option[value="<TMPL_VAR DONGLE2.freq2>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							<td style="width: 2%; height: 48px">
 								<select id="d2freq3" name="d2freq3" data-mini="true" data-native-menu="false" width="2%">
-									<option value="0">-</option>'
+									<option value="0">-</option>
 									<option value="433.92M">433.92M</option>
 									<option value="868.3M">868.3M</option>
 									<option value="315M">315M</option>
@@ -233,24 +237,25 @@
 									<option value="915M">915M</option>
 								</select>
 								<script>
-									$('#d2freq3 option[value="<TMPL_VAR DONGLE2.freq3>"').prop('selected', 'selected');
+									$('#d2freq3 option[value="<TMPL_VAR DONGLE2.freq3>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							<td style="width: 4%; height: 48px">
 								<input id="d2freq4" name="d2freq4" type="text" class="textfield" placeholder= "411.26" value="<TMPL_VAR DONGLE2.freq4>">
 							</td>
 							
+								</tr>
 							<tr>
 							<td style="height: 48px; width: 7%">
-								<label id="lhop"><TMPL_VAR DONGLE.LHOP></label>
+								<label id="lhop2"><TMPL_VAR DONGLE.LHOP></label>
 							</td>
 							<td style="height: 48px; width: 8%">
 								<input id="d2hop" name="d2hop" type="text" class="textfield" placeholder= "60 Sek." value="<TMPL_VAR DONGLE2.hop>"
 									data-validation-error-msg="<TMPL_VAR MESSAGE.HOPING>" 
-									data-validation-rule="^([0-9]){2,3}$"">
+									data-validation-rule="^([0-9]){2,3}$">
 							</td>
 							<td style="height: 48px; width: 8%">
-								<label id="lsample"><TMPL_VAR DONGLE.SAMPLING></label>
+								<label id="lsample2"><TMPL_VAR DONGLE.SAMPLING></label>
 							</td>
 							<td style="width: 2%; height: 48px">
 								<select id="d2sample" name="d2sample" data-mini="true" data-native-menu="false" width="50%">
@@ -260,14 +265,16 @@
 									<option value="3200k">3200k</option>
 								</select>
 								<script>
-									$('#d2sample option[value="<TMPL_VAR DONGLE2.sample>"').prop('selected', 'selected');
+									$('#d2sample option[value="<TMPL_VAR DONGLE2.sample>"]').prop('selected', 'selected');
 								</script>
 							</td>
 							</tr>
                         </table>
+						</td>
+					</tr>
 						
 						<!-- load Sensors D2-->
-						<tr>
+						<tr class="serial-group-d2">
 							<td width="25%" ></td>
 								<td width="70%">
 									<div data-role="collapsible" class="serial-group-d2" >
@@ -284,17 +291,13 @@
 							<td width="5%"></td>
 							<td width="20%"></td>
 						</tr>
-                </tr>
-				</div>
 				<!-- Ende Dongle tables -->
 			</table>
-            <p>
-                <center>
+            <div style="text-align: center;">
 					<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>
 					<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
-					<a id="btnrestart" data-role="button" data-inline="true" data-mini="true" data-icon="refresh" >Restart Service</a>
-				</center>
-            </p>
+					<a id="btnrestart" data-role="button" data-inline="true" data-mini="true" data-icon="refresh">Restart Service</a>
+            </div>
         </div>
 		
 		
@@ -318,7 +321,7 @@ function update_pids() {
 
 	.done(function(resp) {
 		console.log( "ajax_post", "success", resp );
-		if(resp.pids.rscanner != null) {
+		if (resp.pids && resp.pids.rscanner) {
 			$("#scanner").attr("style", "color:green").html("Scanning on ISM-Bands running (PID"+resp.pids.rscanner+")");
 		} else {
 			$("#scanner").attr("style", "color:red").html("Scanning on ISM-Bands not running or restarting");
@@ -482,7 +485,7 @@ $(document).ready( function ()  {
             <tr>
                 <td align="center">
                     <p>
-                        <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=<TMPL_VAR FORMNO>">
+                        <a id="btnerrorok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=<TMPL_VAR FORMNO>">
                             <TMPL_VAR ERRORS.ERR_BUTTON_BACK>
                         </a>
                     </p>
@@ -493,20 +496,15 @@ $(document).ready( function ()  {
 </TMPL_IF>
 
 <TMPL_IF SCANNER>
-  <p>
-  <center>
-  <TMPL_VAR BASIS.SCANNER_NOTICE>
-  </center>
-  </p>
+  <div style="text-align: center;">
+    <TMPL_VAR BASIS.SCANNER_NOTICE>
+  </div>
   <TMPL_IF LB3>
-    <p>
-    <center>
-    <a href="/admin/system/tools/terminal/" target="_blank">
-    <div class="menutableicon" style="width:100%; height:120px; padding:0px; background-image: url('/system/images/icons/main_terminal.svg');  background-repeat: no-repeat; background-position: center center;">
+    <div style="text-align: center;">
+      <a href="/admin/system/tools/terminal/" target="_blank">
+        <div class="menutableicon" style="width:100%; height:120px; padding:0px; background-image: url('/system/images/icons/main_terminal.svg'); background-repeat: no-repeat; background-position: center center;"></div>
+        <TMPL_VAR BASIS.SCANNER_LINK>
+      </a>
     </div>
-    <TMPL_VAR BASIS.SCANNER_LINK>
-    </center>
-    </a>
-    </p>
-    </TMPL_IF>
+  </TMPL_IF>
 </TMPL_IF>

@@ -1,16 +1,19 @@
 #!/bin/bash
 
-# Check if it is running and get PID
-pgrep rtl_433
-
-/usr/bin/php -q REPLACELBPHTMLDIR/create_conf.php &
-
+# Create/update rtl_433 configuration synchronously so we can evaluate
+# the real exit code of create_conf.php.
+/usr/bin/php -q REPLACELBPBINDIR/create_conf.php >/dev/null 2>&1
 exitcode=$?
-if [[ $exitcode != 0 ]]; 
-then
-	# Restart if not
-	systemctl restart rtl_433-mqtt.service
-	sleep 5
+
+if [ "$exitcode" -ne 0 ]; then
+    exit "$exitcode"
+fi
+
+# Ensure the rtl_433 service is running.
+if ! systemctl is-active --quiet rtl_433-mqtt.service; then
+    systemctl restart rtl_433-mqtt.service || exit 1
+    sleep 5
+    systemctl is-active --quiet rtl_433-mqtt.service || exit 1
 fi
 
 exit 0

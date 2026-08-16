@@ -2,7 +2,7 @@
 Description=rtl_433
 After=network.target
 [Service]
-ExecStart=/usr/local/rtl/rtl_433/build/src/rtl_433 -c REPLACELBPCONFIGDIR/rtl_433.conf
+ExecStart=/usr/local/bin/rtl_433 -c REPLACELBPCONFIGDIR/rtl_433.conf
 Restart=always
 RestartSec=5
 [Install]

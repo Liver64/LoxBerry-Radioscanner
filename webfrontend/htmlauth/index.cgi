@@ -49,10 +49,10 @@ our $lbptemplatedir;
 our $content;
 our %navbar;
 our $SerialNo;
+our $No;
 our $templatefile = "index.html";
 our $tmp_log_file = "/tmp/scan4lox_log.tmp";
 our $resp;
-our $jsonobj;
 our $pluginconfigjsonfile = "config.json";
 my $pluginlogfile = "rscan4lox.log";
 my $error_message = "";
@@ -107,10 +107,12 @@ if( $q->{action} )
 	ajax_header_text();
 	if( $q->{action} eq "create_serial" ) {
 		$SerialNo = $q->{'Serial'};
-		our $No = $q->{'DNumber'};
-		change_serial();
-		print $resp;
-		&form;
+		$No = $q->{'DNumber'};
+		if (change_serial()) {
+			print "1";
+		} else {
+			print defined($resp) ? $resp : "0";
+		}
 	}
 	exit;
 }
@@ -169,7 +171,7 @@ our $count;
 our $line_sn;
 our $list;
 my $dongle_list;
-my $counter;
+my $counter = 0;
 my $file = '/tmp/final_dongles.txt';
 my @list;
  
@@ -178,7 +180,7 @@ my $json = LoxBerry::JSON->new();
 $list = $json->open(filename => $file, readonly => 1);
 
 if (ref($list) eq "HASH") {
-	$count = scalar(%list);
+	 $count = scalar keys %$list;
     foreach my $key (keys %$list) {
 		$counter++;
 		my $countd = $counter -1;
@@ -188,8 +190,7 @@ if (ref($list) eq "HASH") {
 		$jsonobj->write();
 	}
 	# count dongles and push to Template
-	$count = %$list;
-	$count =~ s/(\r?\n|\r\n?)+$//;
+	$count = scalar keys %$list;
 	$cfg->{"DONGLE"}->{count} = $count;
 	$jsonobj->write();
 	$template->param("USB_LIST", $dongle_list);
@@ -236,7 +237,10 @@ if(!defined $R::do or $R::do eq "form") {
 	&form;
 } elsif ($R::do eq "restart") {
 	$template->param("FORM", "1");
-	system("sudo systemctl restart rtl_433-mqtt.service");
+	if (system("sudo systemctl restart rtl_433-mqtt.service") != 0) {
+		$error_message = $L{'ERRORS.SERVICE_RESTART'};
+		&error;
+	}
 	LOGINF "Scanner Service restarted";
 	printtemplate();
 } elsif ($R::do eq "logfiles") {
@@ -273,7 +277,7 @@ sub form
 	my $array;
 
 	# Set selected values
-	for ($i=1;$i<=$#array;$i++) {
+	for ($i=0;$i<=$#array;$i++) {
 		$checked = 0;
 		foreach (split(/:/,$cfg->{"DONGLE1"}->{protocols} ))  {
 			if ($_ eq $array[$i]->{value}) {
@@ -320,7 +324,7 @@ sub save
 	
 	# save all selected sensors/protocols
 	our $sensors;
-	for (my $i=1;$i<=$#array;$i++) {
+	for (my $i=0;$i<=$#array;$i++) {
  		if ( ${"R::sensors$array[$i]->{value}"} )   {
 		#if ( ${param("sensors$array[$i])->{value}"} )   {
 			if ( !$sensors ) {
@@ -362,8 +366,11 @@ sub save
 	}
 	
 	$jsonobj->write();
-	# Call saving to rtl_433
-	&rtl_433_form;
+	# Create rtl_433 configuration and restart the service.
+	if (!rtl_433_form()) {
+		$error_message = $L{'ERRORS.CONFIG_SERVICE'};
+		&error;
+	}
 		
 	&print_save;
 	exit;
@@ -426,15 +433,27 @@ sub ajax_header_text
 ########################################################################
 sub rtl_433_form
 {
-
-	# Stop Service
+	# Stop Service before replacing its configuration.
 	system("sudo systemctl stop rtl_433-mqtt.service");
-	# Create rtl_433.conf file
-	my $file = qx(/usr/bin/php $lbpbindir/create_conf.php);
-	# Start Service using newly created file
-	system("sudo systemctl start rtl_433-mqtt.service");
-	return;
 
+	# Create rtl_433.conf and honor the generator's real exit status.
+	my $file = qx(/usr/bin/php $lbpbindir/create_conf.php 2>&1);
+	my $create_rc = $? >> 8;
+	if ($create_rc != 0) {
+		LOGERR "Creating rtl_433.conf failed: $file";
+		# If an older configuration still exists, bring the previous service back.
+		if (-s $lbpconfigdir . "/rtl_433.conf") {
+			system("sudo systemctl start rtl_433-mqtt.service");
+		}
+		return 0;
+	}
+
+	# Start Service using the newly created file.
+	if (system("sudo systemctl start rtl_433-mqtt.service") != 0) {
+		LOGERR "Could not start rtl_433-mqtt.service";
+		return 0;
+	}
+	return 1;
 }
 
 ########################################################################
@@ -442,20 +461,45 @@ sub rtl_433_form
 ########################################################################
 sub change_serial
 {
-	my $No;
-	
-	# Stop Service
-	system("sudo systemctl stop rtl_433-mqtt.service");
-	sleep (1);
-	system("yes 2>/dev/null | rtl_eeprom -d".$No." -s00000".$SerialNo." > /dev/null 2>&1");
-	$cfg->{"DONGLE1"}->{Serial} = "00000".$SerialNo;
-	$jsonobj->write();
-	#my $file = qx(/usr/bin/php $lbpbindir/create_conf.php);
-	system("sudo systemctl start rtl_433-mqtt.service");
-	notify( $lbpplugindir, "Radioscanner", "Please restart LoxBerry or unplug/plugin the Dongle in order to apply the changed Serial No.");
-	printtemplate();
-	return;
+	# Both values come from the AJAX request. Validate them server-side before
+	# using them in a shell command.
+	if (!defined $No || $No !~ /^\d+$/ || !defined $SerialNo || $SerialNo !~ /^\d{3}$/) {
+		$resp = "Invalid dongle number or serial number.";
+		return 0;
+	}
 
+	# Stop the service while the EEPROM serial is changed.
+	if (system("sudo systemctl stop rtl_433-mqtt.service") != 0) {
+		$resp = "Could not stop rtl_433-mqtt.service.";
+		return 0;
+	}
+	sleep (1);
+
+	my $eeprom_rc = system("yes 2>/dev/null | rtl_eeprom -d".$No." -s00000".$SerialNo." > /dev/null 2>&1");
+	if ($eeprom_rc != 0) {
+		system("sudo systemctl start rtl_433-mqtt.service");
+		$resp = "Could not write the new dongle serial number.";
+		return 0;
+	}
+
+	# Update whichever configured dongle currently maps to the selected USB index.
+	for my $dongle_no (1..3) {
+		my $key = "DONGLE".$dongle_no;
+		if (defined $cfg->{$key}->{Number} && $cfg->{$key}->{Number} eq $No) {
+			$cfg->{$key}->{Serial} = "00000".$SerialNo;
+			last;
+		}
+	}
+	$jsonobj->write();
+
+	if (system("sudo systemctl start rtl_433-mqtt.service") != 0) {
+		$resp = "Serial changed, but rtl_433-mqtt.service could not be restarted.";
+		return 0;
+	}
+
+	notify( $lbpplugindir, "Radioscanner", "Please restart LoxBerry or unplug/plugin the Dongle in order to apply the changed Serial No.");
+	$resp = "1";
+	return 1;
 }
 
 ##########################################################################
@@ -475,8 +519,9 @@ sub printtemplate
 # Print for testing
 ##########################################################################
 
-sub print_test($content)
+sub print_test
 {
+	my ($content) = @_;
 	# Print Template
 	print "Content-Type: text/html; charset=utf-8\n\n"; 
 	print "*********************************************************************************************";

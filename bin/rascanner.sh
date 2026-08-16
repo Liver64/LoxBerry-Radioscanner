@@ -41,7 +41,7 @@ if [[ -z "$@" ]]; then
 			if [[ ! -z $hop ]];then
 				CMD="$CMD -H ${hop}"
 			fi
-			if [[ ! -s $sample ]];then
+			if [[ -n "$sample" && "$sample" != "null" ]]; then
 				CMD="$CMD -s ${sample}"
 			fi
 		fi
